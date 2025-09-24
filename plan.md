@@ -23,8 +23,11 @@ From the author of that library ([@d-v=b](https://github.com/d-v-b))
 
 ## implementation staging
 
+The very initial implementation will not be an Xarray backend. We will just write a function that creates an Xarray object.
+
 1. At first only support ome v0.5
 2. Reading a whole store as a datatree
 3. Reading a group or array as a dataset
 4. Support writing back to disk
-5. Support for older version of ome spec
+5. Integrate as an Xarray backend
+6. Support for older version of ome spec
