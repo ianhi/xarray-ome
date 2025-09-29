@@ -1,0 +1,11 @@
+# Ignore downloaded sample data
+*.zarr/
+*.ome.zarr/
+*.zip
+*.tar.gz
+
+# Ignore output files
+output/
+*.png
+*.jpg
+*.pdf
