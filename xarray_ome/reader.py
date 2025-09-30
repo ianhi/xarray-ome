@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 import xarray as xr
 from ngff_zarr import NgffImage, from_ngff_zarr
 
+from ._store_utils import _detect_store_type
 from .transforms import transforms_to_coords
 
 if TYPE_CHECKING:
@@ -30,13 +31,37 @@ def open_ome_datatree(path: str | Path, validate: bool = False) -> xr.DataTree:
         DataTree with multiscale pyramid structure. Each resolution level
         is stored as a child node. OME-NGFF metadata is preserved in attrs.
 
+    Raises
+    ------
+    ValueError
+        If the OME-Zarr store is not a simple multiscale image (e.g., HCS plate)
+
     Notes
     -----
     This function uses ngff-zarr to read the OME-Zarr store and parse metadata,
     then converts the multiscale structure to xarray with proper coordinates.
+
+    Currently only supports simple multiscale images. HCS (High Content Screening)
+    plate structures are not yet supported.
     """
-    # Use ngff-zarr to read the store
-    multiscales = from_ngff_zarr(str(path), validate=validate)
+    try:
+        multiscales = from_ngff_zarr(str(path), validate=validate)
+    except KeyError as e:
+        if "multiscales" in str(e):
+            store_type = _detect_store_type(str(path))
+            if store_type == "hcs":
+                msg = (
+                    f"The OME-Zarr store at '{path}' appears to be an HCS (High Content "
+                    "Screening) plate structure, which is not yet supported. "
+                    "Currently only simple multiscale images are supported."
+                )
+                raise ValueError(msg) from e
+            msg = (
+                f"The OME-Zarr store at '{path}' does not contain multiscale metadata. "
+                "It may be an unsupported OME-Zarr structure."
+            )
+            raise ValueError(msg) from e
+        raise
 
     # Convert each scale level to a Dataset and create child nodes
     children = {}
@@ -119,13 +144,37 @@ def open_ome_dataset(path: str | Path, resolution: int = 0, validate: bool = Fal
         Dataset with proper physical coordinates derived from OME-NGFF
         coordinate transformations. OME-NGFF metadata is preserved in attrs.
 
+    Raises
+    ------
+    ValueError
+        If the OME-Zarr store is not a simple multiscale image (e.g., HCS plate)
+
     Notes
     -----
     Coordinate transformations (scale/translation) from OME-NGFF are converted
     to explicit coordinate arrays in xarray.
+
+    Currently only supports simple multiscale images. HCS (High Content Screening)
+    plate structures are not yet supported.
     """
-    # Use ngff-zarr to read the store
-    multiscales = from_ngff_zarr(str(path), validate=validate)
+    try:
+        multiscales = from_ngff_zarr(str(path), validate=validate)
+    except KeyError as e:
+        if "multiscales" in str(e):
+            store_type = _detect_store_type(str(path))
+            if store_type == "hcs":
+                msg = (
+                    f"The OME-Zarr store at '{path}' appears to be an HCS (High Content "
+                    "Screening) plate structure, which is not yet supported. "
+                    "Currently only simple multiscale images are supported."
+                )
+                raise ValueError(msg) from e
+            msg = (
+                f"The OME-Zarr store at '{path}' does not contain multiscale metadata. "
+                "It may be an unsupported OME-Zarr structure."
+            )
+            raise ValueError(msg) from e
+        raise
 
     # Check that resolution level exists
     if resolution >= len(multiscales.images):
