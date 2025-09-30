@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import xarray as xr
-from ngff_zarr import NgffImage, from_ngff_zarr
+from ngff_zarr import NgffImage, from_ngff_zarr  # type: ignore[import-untyped]
 
 from ._store_utils import _detect_store_type
 from .transforms import transforms_to_coords

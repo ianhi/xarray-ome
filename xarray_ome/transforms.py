@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Hashable, Sequence
 
 import numpy as np
 
@@ -65,7 +65,7 @@ def transforms_to_coords(
 
 def coords_to_transforms(
     dataset: xr.Dataset,
-) -> tuple[dict[str, float], dict[str, float]]:
+) -> tuple[dict[Hashable, float], dict[Hashable, float]]:
     """
     Convert xarray coordinates back to OME-NGFF coordinate transformations.
 
@@ -100,8 +100,8 @@ def coords_to_transforms(
         return dataset.attrs["ome_scale"], dataset.attrs["ome_translation"]
 
     # Otherwise, compute from coordinates
-    scale: dict[str, float] = {}
-    translation: dict[str, float] = {}
+    scale: dict[Hashable, float] = {}
+    translation: dict[Hashable, float] = {}
 
     # Get the first data variable to access dimensions
     first_var = next(iter(dataset.data_vars))
