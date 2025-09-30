@@ -38,19 +38,18 @@ def open_ome_datatree(path: str | Path, validate: bool = False) -> xr.DataTree:
     # Use ngff-zarr to read the store
     multiscales = from_ngff_zarr(str(path), validate=validate)
 
-    # Create the root DataTree node
-    dt = xr.DataTree(name="root")
-
-    # Store the full OME-NGFF metadata in root attrs
-    # Convert metadata to dict for serialization
-    dt.attrs["ome_ngff_metadata"] = _metadata_to_dict(multiscales.metadata)
-
-    # Convert each scale level to a Dataset and add as child node
+    # Convert each scale level to a Dataset and create child nodes
+    children = {}
     for i, ngff_image in enumerate(multiscales.images):
         dataset = _ngff_image_to_dataset(ngff_image)
-        # Create child node with scale level name
         scale_name = f"scale{i}"
-        xr.DataTree(dataset, name=scale_name, parent=dt)
+        children[scale_name] = xr.DataTree(dataset, name=scale_name)
+
+    # Create the root DataTree with children
+    dt = xr.DataTree(children=children, name="root")
+
+    # Store the full OME-NGFF metadata in root attrs
+    dt.attrs["ome_ngff_metadata"] = _metadata_to_dict(multiscales.metadata)
 
     return dt
 
