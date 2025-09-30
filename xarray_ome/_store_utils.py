@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 
 def _detect_store_type(path: str) -> str:
     """
-    Detect the type of OME-Zarr store.
+    Detect the type of OME-Zarr store by inspecting metadata.
 
     Parameters
     ----------
@@ -16,21 +18,34 @@ def _detect_store_type(path: str) -> str:
     -------
     str
         Store type: 'image', 'hcs', or 'unknown'
+
+    Notes
+    -----
+    Uses ngff-zarr's validate function to attempt validation against
+    different OME-NGFF models (image, plate, well).
     """
     try:
-        from ngff_zarr import from_hcs_zarr
+        import zarr
+        from ngff_zarr import validate  # type: ignore[import-untyped]
+
+        store = zarr.open(path, mode="r")
+        attrs: dict[str, Any] = dict(store.attrs.asdict())
 
         try:
-            from_hcs_zarr(path)
+            validate(attrs, model="image")
+            return "image"
+        except Exception:
+            pass
+
+        try:
+            validate(attrs, model="plate")
             return "hcs"
         except Exception:
             pass
 
-        from ngff_zarr import from_ngff_zarr
-
         try:
-            from_ngff_zarr(path)
-            return "image"
+            validate(attrs, model="well")
+            return "hcs"
         except Exception:
             pass
 
