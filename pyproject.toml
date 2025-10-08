@@ -16,6 +16,9 @@ dependencies = [
     "ipympl>=0.9.7",
 ]
 
+[project.entry-points."xarray.backends"]
+ome-zarr = "xarray_ome.backend:OmeZarrBackendEntrypoint"
+
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
