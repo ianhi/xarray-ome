@@ -51,3 +51,8 @@ dmypy.json
 data/
 *.zarr/
 *.ome.zarr/
+
+# Documentation builds
+docs/_build/
+docs/_static/
+docs/_templates/
