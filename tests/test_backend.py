@@ -123,3 +123,27 @@ def test_guess_can_open(tmp_ome_zarr: Path) -> None:
     assert backend.guess_can_open("file.zarr") is True
     assert backend.guess_can_open("file.nc") is False
     assert backend.guess_can_open(tmp_ome_zarr) is True
+
+
+def test_single_scale_dataset(tmp_ome_zarr_single_scale: Path) -> None:
+    """Test opening single-resolution file without specifying resolution."""
+    ds = xr.open_dataset(str(tmp_ome_zarr_single_scale), engine="ome-zarr")
+
+    data_var_name = list(ds.data_vars.keys())[0]
+    assert ds[data_var_name].shape == (8, 8)
+    assert "y" in ds.dims
+    assert "x" in ds.dims
+
+
+def test_single_scale_datatree(tmp_ome_zarr_single_scale: Path) -> None:
+    """Test opening single-resolution file as DataTree."""
+    dt = xr.open_datatree(str(tmp_ome_zarr_single_scale), engine="ome-zarr")
+
+    assert len(dt.children) == 1
+    assert "scale0" in dt.children
+
+    scale0 = dt["scale0"].ds
+    assert scale0 is not None
+
+    data_var_name = list(scale0.data_vars.keys())[0]
+    assert scale0[data_var_name].shape == (8, 8)
