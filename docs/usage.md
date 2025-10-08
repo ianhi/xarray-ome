@@ -31,14 +31,40 @@ Browse more sample datasets at: [OME-NGFF Samples](https://idr.github.io/ome-ngf
 
 ### Opening OME-Zarr Files
 
-xarray-ome provides two main functions for reading OME-Zarr files:
+xarray-ome provides two ways to open OME-Zarr files:
 
-#### Reading as DataTree (Multiscale Pyramid)
+1. **Using dedicated functions** (`open_ome_datatree`, `open_ome_dataset`)
+2. **Using xarray's native backend** (`xr.open_datatree`, `xr.open_dataset` with `engine="ome-zarr"`)
 
-Use `open_ome_datatree()` to load all resolution levels:
+Both approaches provide the same functionality - use whichever fits your workflow better.
+
+#### Using Xarray Backend (Recommended)
+
+The most natural way to use xarray-ome is through xarray's native functions:
 
 ```python
-from xarray_ome import open_ome_datatree
+import xarray as xr
+
+# Open entire multiscale pyramid as DataTree
+dt = xr.open_datatree("image.ome.zarr", engine="ome-zarr")
+
+# Open single resolution level as Dataset
+ds = xr.open_dataset("image.ome.zarr", engine="ome-zarr")
+
+# Open specific resolution level
+ds_low = xr.open_dataset("image.ome.zarr", engine="ome-zarr", resolution=2)
+
+# Works with remote URLs too!
+url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr"
+dt = xr.open_datatree(url, engine="ome-zarr")
+```
+
+#### Using Dedicated Functions
+
+Alternatively, use the dedicated functions for more explicit control:
+
+```python
+from xarray_ome import open_ome_datatree, open_ome_dataset
 
 # Open from local file
 dt = open_ome_datatree("path/to/image.ome.zarr")
@@ -55,19 +81,9 @@ high_res = dt["scale0"]
 
 # Access lower resolution
 low_res = dt["scale2"]
-```
 
-#### Reading as Dataset (Single Resolution)
-
-Use `open_ome_dataset()` to load a specific resolution level:
-
-```python
-from xarray_ome import open_ome_dataset
-
-# Open highest resolution (default)
+# Open specific resolution level
 ds = open_ome_dataset("path/to/image.ome.zarr")
-
-# Open a specific resolution level
 ds_low = open_ome_dataset("path/to/image.ome.zarr", resolution=2)
 
 # Access data and coordinates

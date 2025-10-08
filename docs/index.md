@@ -62,14 +62,19 @@ pip install xarray-ome
 ### Basic Usage
 
 ```python
-from xarray_ome import open_ome_dataset
+import xarray as xr
 
-# Open an OME-Zarr file (local or remote)
+# Use xarray's native backend (recommended)
+ds = xr.open_dataset("image.ome.zarr", engine="ome-zarr")
+dt = xr.open_datatree("image.ome.zarr", engine="ome-zarr")
+
+# Or use dedicated functions
+from xarray_ome import open_ome_dataset
 ds = open_ome_dataset("path/to/image.ome.zarr")
 
-# Or try with real sample data from IDR:
+# Try with real sample data from IDR:
 url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr"
-ds = open_ome_dataset(url)
+ds = xr.open_dataset(url, engine="ome-zarr")
 
 # Access data with physical coordinates
 print(ds.coords)  # Coordinates in micrometers
@@ -107,7 +112,6 @@ contributing
 
 ## Current Limitations
 
-- **Read-only**: Writing functionality not yet implemented
 - **Simple images only**: HCS plate structures not yet supported
 - **OME-NGFF v0.4+**: Primary focus on recent specification versions
 
