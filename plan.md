@@ -53,11 +53,14 @@ From the author of that library ([@d-v-b](https://github.com/d-v-b))
 
 ## Implementation Staging
 
-The very initial implementation will not be an Xarray backend. We will just write a function that creates an Xarray object.
+1. ✅ Support OME-NGFF v0.1-v0.5 (via ngff-zarr)
+2. ✅ Reading a whole store as a datatree (using ngff-zarr for I/O)
+3. ✅ Reading a group or array as a dataset
+4. ✅ Support writing back to disk (using ngff-zarr for I/O - v0.4-v0.5)
+5. ✅ Integrate as an Xarray backend
+6. ✅ Support for older OME spec versions (automatically via ngff-zarr)
 
-1. At first only support ome v0.5
-2. Reading a whole store as a datatree (using ngff-zarr for I/O)
-3. Reading a group or array as a dataset
-4. Support writing back to disk (using ngff-zarr for I/O)
-5. Integrate as an Xarray backend
-6. Support for older version of ome spec (leverage ngff-zarr's multi-version support)
+**Status**: All planned features implemented!
+
+**Note**: We support all OME-NGFF versions (v0.1-v0.5) for reading through ngff-zarr.
+Writing is supported for v0.4 and v0.5 (the current standard versions).

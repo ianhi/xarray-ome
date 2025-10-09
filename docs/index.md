@@ -110,10 +110,17 @@ api
 contributing
 ```
 
-## Current Limitations
+## Specification Support
 
-- **Simple images only**: HCS plate structures not yet supported
-- **OME-NGFF v0.4+**: Primary focus on recent specification versions
+**OME-NGFF Versions:**
+
+- **Reading**: v0.1 through v0.5 (via ngff-zarr)
+- **Writing**: v0.4 and v0.5 (via ngff-zarr)
+
+**Data Structures:**
+
+- ✅ Simple multiscale images
+- ❌ HCS plate structures (not yet supported)
 
 ## Contributing
 

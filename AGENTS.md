@@ -27,19 +27,21 @@ Branch: `implement-ngff-zarr-integration`
 
 **Completed:**
 
-- Core reading functionality with ngff-zarr integration (open_ome_dataset, open_ome_datatree)
+- OME-NGFF v0.1-v0.5 support (read all, write v0.4-v0.5 via ngff-zarr)
+- Core reading functionality (open_ome_dataset, open_ome_datatree)
 - Coordinate transformation logic (transforms_to_coords, coords_to_transforms)
 - Writing functionality (write_ome_dataset, write_ome_datatree)
-- Comprehensive test suite (34 tests: reading, writing, transforms, backend)
+- Comprehensive test suite (42 tests: reading, writing, transforms, backend, integration)
 - Xarray backend integration (engine="ome-zarr")
 - Complete Sphinx documentation with MyST Markdown
+- Integration tests with real IDR sample data
 
-**Next Steps:**
+**Future Enhancements:**
 
-- Support for older OME-NGFF versions (v0.1-v0.3)
 - HCS plate structure support
 - Performance optimizations
 - Integration with visualization tools
+- Additional metadata validation options
 
 ## Code Style Guidelines
 

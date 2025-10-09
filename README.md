@@ -4,10 +4,12 @@ Read and write OME-Zarr files with xarray.
 
 This package provides a simple interface for working with OME-Zarr (OME-NGFF) files in xarray, with support for:
 
+- **OME-NGFF v0.1-v0.5**: Read all versions, write v0.4-v0.5
 - Lazy loading of multiscale image pyramids
 - Physical coordinates from OME-NGFF transformations
 - Remote data access (HTTP, S3)
 - Round-trip preservation of metadata
+- Native xarray backend integration
 
 Built on [ngff-zarr](https://ngff-zarr.readthedocs.io/) for robust OME-NGFF support.
 
