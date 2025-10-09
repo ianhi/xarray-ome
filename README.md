@@ -116,7 +116,14 @@ uv run pre-commit install
 ### Running tests
 
 ```bash
+# Run all tests (fast + slow integration tests)
 uv run pytest
+
+# Run only fast tests (skip network-dependent integration tests)
+uv run pytest -m "not slow"
+
+# Run only integration tests with real IDR data
+uv run pytest -m slow
 ```
 
 ### Type checking
