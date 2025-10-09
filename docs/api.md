@@ -80,7 +80,7 @@ Open a single resolution level from an OME-Zarr store as an xarray Dataset.
 
 - **resolution** : `int`, default `0`
 
-  Which resolution level to open. `0` is the highest resolution.
+  Which resolution level to open. `0` is the highest resolution. For single-resolution files, the default works without needing to specify this parameter.
 
 - **validate** : `bool`, default `False`
 
@@ -108,11 +108,14 @@ Open a single resolution level from an OME-Zarr store as an xarray Dataset.
 ```python
 from xarray_ome import open_ome_dataset
 
-# Open highest resolution (default)
+# Open highest resolution (default) - works for single or multi-resolution
 ds = open_ome_dataset("image.ome.zarr")
 
-# Open specific resolution level
+# Open specific resolution level in multi-resolution pyramid
 ds_low = open_ome_dataset("image.ome.zarr", resolution=2)
+
+# Single-resolution files work without specifying resolution
+ds_single = open_ome_dataset("single_scale.ome.zarr")  # Uses resolution=0
 
 # Access data and coordinates
 print(ds.dims)           # Dimensions: {c: 2, z: 236, y: 275, x: 271}

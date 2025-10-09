@@ -48,11 +48,14 @@ import xarray as xr
 # Open entire multiscale pyramid as DataTree
 dt = xr.open_datatree("image.ome.zarr", engine="ome-zarr")
 
-# Open single resolution level as Dataset
+# Open single resolution level as Dataset (works for single or multi-resolution)
 ds = xr.open_dataset("image.ome.zarr", engine="ome-zarr")
 
-# Open specific resolution level
+# Open specific resolution level in multi-resolution pyramid
 ds_low = xr.open_dataset("image.ome.zarr", engine="ome-zarr", resolution=2)
+
+# Single-resolution files work automatically with default resolution=0
+ds_single = xr.open_dataset("single_scale.ome.zarr", engine="ome-zarr")
 
 # Works with remote URLs too!
 url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr"
