@@ -63,10 +63,13 @@ def open_ome_datatree(path: str | Path, validate: bool = False) -> xr.DataTree:
             raise ValueError(msg) from e
         raise
 
+    # Extract metadata dict for passing to conversion
+    metadata_dict = _metadata_to_dict(multiscales.metadata)
+
     # Convert each scale level to a Dataset and create child nodes
     children = {}
     for i, ngff_image in enumerate(multiscales.images):
-        dataset = _ngff_image_to_dataset(ngff_image)
+        dataset = _ngff_image_to_dataset(ngff_image, metadata_dict)
         scale_name = f"scale{i}"
         children[scale_name] = xr.DataTree(dataset, name=scale_name)
 
@@ -74,15 +77,38 @@ def open_ome_datatree(path: str | Path, validate: bool = False) -> xr.DataTree:
     dt = xr.DataTree(children=children, name="root")
 
     # Store the full OME-NGFF metadata in root attrs
-    dt.attrs["ome_ngff_metadata"] = _metadata_to_dict(multiscales.metadata)
+    dt.attrs["ome_ngff_metadata"] = metadata_dict
 
     return dt
 
 
-def _ngff_image_to_dataset(ngff_image: NgffImage) -> xr.Dataset:
-    """Convert an NgffImage to an xarray Dataset."""
+def _ngff_image_to_dataset(
+    ngff_image: NgffImage, metadata: dict[str, Any] | None = None
+) -> xr.Dataset:
+    """Convert an NgffImage to an xarray Dataset.
+
+    Parameters
+    ----------
+    ngff_image : NgffImage
+        The image to convert
+    metadata : dict, optional
+        Full OME-NGFF metadata dict containing channel/time labels
+    """
     # Get the data array
     data = ngff_image.data
+
+    # Extract channel labels from OME metadata if available
+    channel_labels = None
+    if metadata:
+        omero = metadata.get("omero")
+        if omero and isinstance(omero, dict):
+            channels = omero.get("channels", [])
+            if channels:
+                channel_labels = [ch.get("label", f"channel_{i}") for i, ch in enumerate(channels)]
+
+    # Could add time labels here in the future if spec is extended
+    # For now, time is just numeric per OME-NGFF spec
+    time_labels = None
 
     # Convert OME-NGFF transforms to xarray coordinates
     coords = transforms_to_coords(
@@ -90,6 +116,8 @@ def _ngff_image_to_dataset(ngff_image: NgffImage) -> xr.Dataset:
         dims=ngff_image.dims,
         scale=ngff_image.scale,
         translation=ngff_image.translation,
+        channel_labels=channel_labels,
+        time_labels=time_labels,
     )
 
     # Create DataArray with coordinates
@@ -112,6 +140,14 @@ def _ngff_image_to_dataset(ngff_image: NgffImage) -> xr.Dataset:
         dataset.attrs["ome_axes_orientations"] = {
             k: str(v) for k, v in ngff_image.axes_orientations.items()
         }
+
+    # Store image name from OME metadata if available
+    if metadata and "name" in metadata:
+        dataset.attrs["ome_image_name"] = metadata["name"]
+
+    # Store channel information for reference
+    if channel_labels:
+        dataset.attrs["ome_channel_labels"] = channel_labels
 
     return dataset
 
@@ -176,6 +212,9 @@ def open_ome_dataset(path: str | Path, resolution: int = 0, validate: bool = Fal
             raise ValueError(msg) from e
         raise
 
+    # Extract metadata dict for passing to conversion
+    metadata_dict = _metadata_to_dict(multiscales.metadata)
+
     # Check that resolution level exists
     if resolution >= len(multiscales.images):
         msg = (
@@ -188,10 +227,10 @@ def open_ome_dataset(path: str | Path, resolution: int = 0, validate: bool = Fal
     ngff_image = multiscales.images[resolution]
 
     # Convert to Dataset
-    dataset = _ngff_image_to_dataset(ngff_image)
+    dataset = _ngff_image_to_dataset(ngff_image, metadata_dict)
 
     # Store metadata about resolution level
     dataset.attrs["ome_ngff_resolution"] = resolution
-    dataset.attrs["ome_ngff_metadata"] = _metadata_to_dict(multiscales.metadata)
+    dataset.attrs["ome_ngff_metadata"] = metadata_dict
 
     return dataset

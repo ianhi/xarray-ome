@@ -15,6 +15,9 @@ def transforms_to_coords(
     dims: Sequence[str],
     scale: dict[str, float],
     translation: dict[str, float],
+    *,
+    channel_labels: list[str] | None = None,
+    time_labels: list[str] | None = None,
 ) -> dict[str, np.ndarray]:
     """
     Convert OME-NGFF coordinate transformations to xarray coordinate arrays.
@@ -29,6 +32,10 @@ def transforms_to_coords(
         Scale factors for each dimension
     translation : dict[str, float]
         Translation offsets for each dimension
+    channel_labels : list of str, optional
+        Channel names from OME metadata (omero.channels[].label)
+    time_labels : list of str, optional
+        Time point labels from OME metadata
 
     Returns
     -------
@@ -43,6 +50,9 @@ def transforms_to_coords(
     For each dimension, the coordinate array is computed as:
         coords[dim] = translation[dim] + scale[dim] * np.arange(size[dim])
 
+    For channel and time dimensions, if labels are provided, they are used
+    instead of numeric indices to create more meaningful coordinate arrays.
+
     This represents physical/world coordinates rather than pixel indices.
 
     References
@@ -52,13 +62,20 @@ def transforms_to_coords(
     coords: dict[str, np.ndarray] = {}
 
     for dim, size in zip(dims, shape):
-        # Get scale and translation for this dimension
-        dim_scale = scale.get(dim, 1.0)
-        dim_translation = translation.get(dim, 0.0)
+        # Special handling for channel dimension with labels
+        if dim == "c" and channel_labels is not None and len(channel_labels) == size:
+            coords[dim] = np.array(channel_labels, dtype=object)
+        # Special handling for time dimension with labels
+        elif dim == "t" and time_labels is not None and len(time_labels) == size:
+            coords[dim] = np.array(time_labels, dtype=object)
+        else:
+            # Get scale and translation for this dimension
+            dim_scale = scale.get(dim, 1.0)
+            dim_translation = translation.get(dim, 0.0)
 
-        # Create coordinate array: translation + scale * indices
-        # This converts pixel indices to physical coordinates
-        coords[dim] = dim_translation + dim_scale * np.arange(size)
+            # Create coordinate array: translation + scale * indices
+            # This converts pixel indices to physical coordinates
+            coords[dim] = dim_translation + dim_scale * np.arange(size)
 
     return coords
 
