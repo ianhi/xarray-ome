@@ -289,6 +289,35 @@ Each Dataset (from `open_ome_dataset()` or DataTree child nodes) contains:
 
   Full OME-NGFF metadata (only in Datasets from `open_ome_dataset()`).
 
+- **ome_image_name** : `str` (optional)
+
+  Image name from OME-NGFF metadata, if present.
+
+- **ome_channel_labels** : `list[str]` (optional)
+
+  Channel labels extracted from `omero.channels[].label` metadata.
+  Used as coordinate values for the channel dimension when available.
+  Example: `['LaminB1', 'Dapi']`
+
+### Coordinate Labels
+
+When OME metadata includes channel labels (via `omero.channels[].label`), they are automatically used as coordinate values for the channel dimension instead of numeric indices:
+
+```python
+ds = open_ome_dataset("image.ome.zarr")
+
+# Channel coordinates use labels from metadata
+print(ds.coords['c'].values)  # ['LaminB1', 'Dapi']
+
+# Instead of numeric indices:
+# [0, 1]
+
+# Access data by channel name
+lamin_data = ds.sel(c='LaminB1')
+```
+
+**Note:** Channel labels are stored in the `omero.channels[].label` field, which is marked as "transitional" in the OME-NGFF specification but is the only standard location for channel labels across all versions (v0.1-v0.5).
+
 ## Coordinate Transformations
 
 ### transforms_to_coords

@@ -82,6 +82,62 @@ def open_ome_datatree(path: str | Path, validate: bool = False) -> xr.DataTree:
     return dt
 
 
+def _extract_channel_labels(
+    metadata: dict[str, Any] | None, expected_size: int | None = None
+) -> list[str] | None:
+    """Extract channel labels from OME-NGFF metadata.
+
+    Handles metadata from all OME-NGFF versions (v0.1-v0.5).
+    Channel labels are stored in omero.channels[].label.
+
+    Parameters
+    ----------
+    metadata : dict, optional
+        Full OME-NGFF metadata dict
+    expected_size : int, optional
+        Expected number of channels for validation
+
+    Returns
+    -------
+    list of str or None
+        Channel labels, or None if not available
+
+    Notes
+    -----
+    The omero.channels metadata is marked as "transitional" in the spec
+    but is the only standard location for channel labels in all versions.
+    """
+    if not metadata:
+        return None
+
+    omero = metadata.get("omero")
+    if not omero:
+        return None
+
+    if not isinstance(omero, dict):
+        return None
+
+    channels = omero.get("channels", [])
+    if not channels:
+        return None
+
+    channel_labels = []
+    for i, ch in enumerate(channels):
+        if isinstance(ch, dict):
+            label = ch.get("label")
+            if label:
+                channel_labels.append(label)
+            else:
+                channel_labels.append(f"channel_{i}")
+        else:
+            channel_labels.append(f"channel_{i}")
+
+    if expected_size is not None and len(channel_labels) != expected_size:
+        return None
+
+    return channel_labels if channel_labels else None
+
+
 def _ngff_image_to_dataset(
     ngff_image: NgffImage, metadata: dict[str, Any] | None = None
 ) -> xr.Dataset:
@@ -97,14 +153,14 @@ def _ngff_image_to_dataset(
     # Get the data array
     data = ngff_image.data
 
+    # Extract channel dimension size for validation
+    channel_size = None
+    if "c" in ngff_image.dims:
+        channel_idx = ngff_image.dims.index("c")
+        channel_size = data.shape[channel_idx]
+
     # Extract channel labels from OME metadata if available
-    channel_labels = None
-    if metadata:
-        omero = metadata.get("omero")
-        if omero and isinstance(omero, dict):
-            channels = omero.get("channels", [])
-            if channels:
-                channel_labels = [ch.get("label", f"channel_{i}") for i, ch in enumerate(channels)]
+    channel_labels = _extract_channel_labels(metadata, channel_size)
 
     # Could add time labels here in the future if spec is extended
     # For now, time is just numeric per OME-NGFF spec
