@@ -82,6 +82,7 @@ dev = [
   "pytest-cov>=7.0.0",
   "pytest-xdist>=3.8.0",
   "ruff>=0.13.1",
+  "sphinx-autobuild>=2025.8.25",
   "sphinx-book-theme>=1.1.4",
   "sphinx-design>=0.6.1",
   "sphinxcontrib-mermaid>=1.0.0",
