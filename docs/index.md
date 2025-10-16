@@ -1,3 +1,15 @@
+---
+jupytext:
+  formats: md:myst
+  text_representation:
+    extension: .md
+    format_name: myst
+kernelspec:
+  display_name: Python 3
+  language: python
+  name: python3
+---
+
 # xarray-ome
 
 ## Seamless integration between OME-Zarr and xarray
@@ -69,7 +81,7 @@ pip install xarray-ome
 
 Try it with real data from the Image Data Resource:
 
-```python
+```{code-cell} ipython3
 import xarray as xr
 
 # Load remote OME-Zarr data (no download needed!)
@@ -77,27 +89,10 @@ url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr"
 ds = xr.open_dataset(url, engine="ome-zarr")
 
 # View the dataset
-print(ds)
+ds
 ```
 
-This produces an xarray Dataset with physical coordinates and channel labels:
-
-```text
-<xarray.Dataset> Size: 143MB
-Dimensions:  (c: 2, z: 236, y: 275, x: 271)
-Coordinates:
-  * c        (c) object 16B 'LaminB1' 'Dapi'
-  * z        (z) float64 2kB 0.0 0.5002 1.0 1.5 ... 116.5 117.1 117.6
-  * y        (y) float64 2kB 0.0 0.3604 0.7208 ... 98.39 98.75
-  * x        (x) float64 2kB 0.0 0.3604 0.7208 ... 96.95 97.31
-Data variables:
-    image    (c, z, y, x) uint16 143MB dask.array<chunksize=(1, 1, 275, 271)>
-Attributes:
-    ome_scale:          {'c': 1.0, 'z': 0.5002, 'y': 0.3604, 'x': 0.3604}
-    ome_translation:    {'c': 0.0, 'z': 0.0, 'y': 0.0, 'x': 0.0}
-```
-
-Notice:
+Notice the xarray Dataset with physical coordinates and channel labels:
 
 - **Channel coordinates** use labels from metadata (`'LaminB1'`, `'Dapi'`) instead of indices
 - **Physical coordinates** in micrometers for spatial dimensions (z, y, x)
@@ -106,15 +101,19 @@ Notice:
 
 Now work with the data using familiar xarray operations:
 
-```python
+```{code-cell} ipython3
 # Select by channel name
 lamin = ds.sel(c='LaminB1')
+print(f"LaminB1 channel shape: {lamin['image'].shape}")
 
 # Create maximum intensity projection
-mip = ds['image'].max(dim='z')
+mip = ds['image'].sel(c='Dapi').max(dim='z')
+print(f"MIP shape: {mip.shape}")
 
 # Process a subset (only downloads what you need!)
-subset = ds.sel(c='Dapi').isel(z=slice(0, 10)).compute()
+subset = ds.sel(c='Dapi').isel(z=slice(0, 10))
+print(f"Subset shape: {subset['image'].shape}")
+print(f"Subset size: {subset['image'].nbytes / 1e6:.1f} MB")
 ```
 
 ## Architecture
