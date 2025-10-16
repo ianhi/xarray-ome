@@ -4,6 +4,12 @@
 
 xarray-ome provides an xarray backend for reading OME-Zarr (OME-NGFF) files, enabling efficient access to multiscale bioimaging data with lazy loading and physical coordinates.
 
+```{note}
+**Powered by [ngff-zarr](https://ngff-zarr.readthedocs.io/)**
+
+xarray-ome is built on top of ngff-zarr, which handles all OME-NGFF specification parsing and Zarr I/O. We focus on providing seamless xarray integration and coordinate transformations.
+```
+
 ## Features
 
 ::::{grid} 2
