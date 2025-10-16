@@ -306,17 +306,21 @@ When OME metadata includes channel labels (via `omero.channels[].label`), they a
 ```python
 ds = open_ome_dataset("image.ome.zarr")
 
-# Channel coordinates use labels from metadata
-print(ds.coords['c'].values)  # ['LaminB1', 'Dapi']
+# Channel coordinates use string labels from metadata
+print(ds.coords['c'].values)  # array(['LaminB1', 'Dapi'], dtype='<U7')
+print(ds.coords['c'].dtype)   # dtype('<U7') - Unicode string
 
 # Instead of numeric indices:
-# [0, 1]
+# array([0, 1])
 
 # Access data by channel name
 lamin_data = ds.sel(c='LaminB1')
 ```
 
-**Note:** Channel labels are stored in the `omero.channels[].label` field, which is marked as "transitional" in the OME-NGFF specification but is the only standard location for channel labels across all versions (v0.1-v0.5).
+**Note:**
+
+- Channel labels are stored in the `omero.channels[].label` field, which is marked as "transitional" in the OME-NGFF specification but is the only standard location for channel labels across all versions (v0.1-v0.5).
+- Coordinates use numpy string dtype (Unicode) rather than object dtype for better performance and type safety.
 
 ## Coordinate Transformations
 

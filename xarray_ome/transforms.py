@@ -64,10 +64,10 @@ def transforms_to_coords(
     for dim, size in zip(dims, shape):
         # Special handling for channel dimension with labels
         if dim == "c" and channel_labels is not None and len(channel_labels) == size:
-            coords[dim] = np.array(channel_labels, dtype=object)
+            coords[dim] = np.array(channel_labels, dtype=str)
         # Special handling for time dimension with labels
         elif dim == "t" and time_labels is not None and len(time_labels) == size:
-            coords[dim] = np.array(time_labels, dtype=object)
+            coords[dim] = np.array(time_labels, dtype=str)
         else:
             # Get scale and translation for this dimension
             dim_scale = scale.get(dim, 1.0)
