@@ -67,26 +67,54 @@ pip install xarray-ome
 
 ### Basic Usage
 
+Try it with real data from the Image Data Resource:
+
 ```python
 import xarray as xr
 
-# Use xarray's native backend (recommended)
-ds = xr.open_dataset("image.ome.zarr", engine="ome-zarr")
-dt = xr.open_datatree("image.ome.zarr", engine="ome-zarr")
-
-# Or use dedicated functions
-from xarray_ome import open_ome_dataset
-ds = open_ome_dataset("path/to/image.ome.zarr")
-
-# Try with real sample data from IDR:
+# Load remote OME-Zarr data (no download needed!)
 url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr"
 ds = xr.open_dataset(url, engine="ome-zarr")
 
-# Access data with physical coordinates
-print(ds.coords)  # Coordinates in micrometers
+# View the dataset
+print(ds)
+```
 
-# Work with the data
-max_projection = ds["image"].max(dim="z")
+This produces an xarray Dataset with physical coordinates and channel labels:
+
+```text
+<xarray.Dataset> Size: 143MB
+Dimensions:  (c: 2, z: 236, y: 275, x: 271)
+Coordinates:
+  * c        (c) object 16B 'LaminB1' 'Dapi'
+  * z        (z) float64 2kB 0.0 0.5002 1.0 1.5 ... 116.5 117.1 117.6
+  * y        (y) float64 2kB 0.0 0.3604 0.7208 ... 98.39 98.75
+  * x        (x) float64 2kB 0.0 0.3604 0.7208 ... 96.95 97.31
+Data variables:
+    image    (c, z, y, x) uint16 143MB dask.array<chunksize=(1, 1, 275, 271)>
+Attributes:
+    ome_scale:          {'c': 1.0, 'z': 0.5002, 'y': 0.3604, 'x': 0.3604}
+    ome_translation:    {'c': 0.0, 'z': 0.0, 'y': 0.0, 'x': 0.0}
+```
+
+Notice:
+
+- **Channel coordinates** use labels from metadata (`'LaminB1'`, `'Dapi'`) instead of indices
+- **Physical coordinates** in micrometers for spatial dimensions (z, y, x)
+- **Lazy loading** with Dask - data is only loaded when needed
+- **OME metadata** preserved in attributes for round-tripping
+
+Now work with the data using familiar xarray operations:
+
+```python
+# Select by channel name
+lamin = ds.sel(c='LaminB1')
+
+# Create maximum intensity projection
+mip = ds['image'].max(dim='z')
+
+# Process a subset (only downloads what you need!)
+subset = ds.sel(c='Dapi').isel(z=slice(0, 10)).compute()
 ```
 
 ## Architecture
