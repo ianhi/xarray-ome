@@ -5,7 +5,7 @@ copyright = "2025, xarray-ome contributors"
 author = "xarray-ome contributors"
 
 extensions = [
-    "myst_parser",
+    "myst_nb",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
@@ -19,6 +19,10 @@ myst_enable_extensions = [
     "deflist",
     "fieldlist",
 ]
+
+nb_execution_mode = "cache"
+nb_execution_timeout = 300
+nb_execution_raise_on_error = True
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
