@@ -28,13 +28,18 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "sphinx_book_theme"
-html_static_path: list[str] = []
+html_static_path = ["_static"]
+html_logo = "_static/xarray-ome-logo.png"
 
 html_theme_options = {
     "repository_url": "https://github.com/your-org/xarray-ome",
     "use_repository_button": True,
     "use_issues_button": True,
     "path_to_docs": "docs",
+    "logo": {
+        "image_light": "_static/xarray-ome-logo.png",
+        "image_dark": "_static/xarray-ome-logo.png",
+    },
 }
 
 intersphinx_mapping = {
