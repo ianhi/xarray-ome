@@ -105,11 +105,10 @@ Multiscales metadata describes the image pyramid structure.
 ```python
 dt = xr.open_datatree("image.ome.zarr", engine="ome-zarr")
 
-# Name is stored in DataTree.name attribute
+# Name is stored in DataTree.name attribute (not in attrs)
 print(dt.name)  # 'image' (from OME-NGFF metadata)
 
 # Multiscale info in root attrs
-print(dt.attrs['ome_name'])  # 'image' (also preserved here)
 print(dt.attrs['ome_version'])  # '0.4'
 print(dt.attrs['ome_num_resolutions'])  # 3
 print(dt.attrs['ome_multiscale_paths'])  # ['0', '1', '2']
@@ -194,10 +193,10 @@ HCS (High Content Screening) plate structures are not yet supported. See TODO.md
 These attributes are present in both DataTree root nodes and individual Datasets:
 
 ```python
+# Note: Image name is stored in DataTree.name, not in attrs
 attrs = {
     # Basic metadata
-    'ome_name': 'image',                    # Image name
-    'ome_version': '0.4',                   # OME-NGFF version
+    'ome_version': '0.4',                         # OME-NGFF version
 
     # Axes information
     'ome_axes_types': ['channel', 'space', ...],  # Axis types

@@ -42,11 +42,11 @@ def test_open_datatree_with_backend(tmp_ome_zarr: Path) -> None:
     """Test opening DataTree using xarray backend."""
     dt_backend = xr.open_datatree(str(tmp_ome_zarr), engine="ome-zarr")
 
-    assert "scale0" in dt_backend.children
-    assert "scale1" in dt_backend.children
-    assert "scale2" in dt_backend.children
+    assert "scale0_test_image" in dt_backend.children
+    assert "scale1_test_image" in dt_backend.children
+    assert "scale2_test_image" in dt_backend.children
 
-    scale0 = dt_backend["scale0"].ds
+    scale0 = dt_backend["scale0_test_image"].ds
     assert scale0 is not None
 
     data_var_name = list(scale0.data_vars.keys())[0]
@@ -99,7 +99,7 @@ def test_drop_variables_dataset(tmp_ome_zarr: Path) -> None:
 def test_drop_variables_datatree(tmp_ome_zarr: Path) -> None:
     """Test drop_variables parameter with datatree."""
     dt_full = xr.open_datatree(str(tmp_ome_zarr), engine="ome-zarr")
-    scale0_full = dt_full["scale0"].ds
+    scale0_full = dt_full["scale0_test_image"].ds
     assert scale0_full is not None
     data_var_name = list(scale0_full.data_vars.keys())[0]
 
@@ -140,9 +140,9 @@ def test_single_scale_datatree(tmp_ome_zarr_single_scale: Path) -> None:
     dt = xr.open_datatree(str(tmp_ome_zarr_single_scale), engine="ome-zarr")
 
     assert len(dt.children) == 1
-    assert "scale0" in dt.children
+    assert "scale0_simple_image" in dt.children
 
-    scale0 = dt["scale0"].ds
+    scale0 = dt["scale0_simple_image"].ds
     assert scale0 is not None
 
     data_var_name = list(scale0.data_vars.keys())[0]

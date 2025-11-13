@@ -18,7 +18,8 @@ class TestMetadataToXarrayAttrs:
 
         attrs = metadata_to_xarray_attrs(metadata)
 
-        assert attrs["ome_name"] == "test_image"
+        # Name is not stored in attrs, it goes in DataTree.name
+        assert "ome_name" not in attrs
         assert attrs["ome_version"] == "0.4"
         assert attrs["ome_ngff_metadata"] == metadata
 
@@ -168,12 +169,13 @@ class TestXarrayToMetadata:
         ds = xr.Dataset(
             {"image": xr.DataArray(np.zeros((10, 10)), dims=["y", "x"])},
         )
-        ds.attrs["ome_name"] = "test_image"
+        # Name would come from DataTree.name, not Dataset attrs
         ds.attrs["ome_version"] = "0.4"
 
         metadata = xarray_to_metadata(ds, preserve_original=False)
 
-        assert metadata["name"] == "test_image"
+        # Name should not be in metadata when converting from Dataset
+        assert "name" not in metadata
         assert metadata["version"] == "0.4"
 
     def test_axes_reconstruction(self) -> None:
@@ -228,12 +230,12 @@ class TestXarrayToMetadata:
             {"image": xr.DataArray(np.zeros((10, 10)), dims=["y", "x"])},
         )
         ds.attrs["ome_ngff_metadata"] = original_metadata
-        ds.attrs["ome_name"] = "modified"  # This should override
+        # Name would be updated from DataTree.name, not from Dataset attrs
 
         metadata = xarray_to_metadata(ds, preserve_original=True)
 
-        # Updated field
-        assert metadata["name"] == "modified"
+        # Name preserved from original metadata (would be updated from DataTree.name in practice)
+        assert metadata["name"] == "original"
         # Preserved custom fields
         assert metadata["custom_field"] == "preserved"
         assert metadata["nested"]["data"] == 123

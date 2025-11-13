@@ -19,11 +19,13 @@ OME-NGFF Metadata Mapping:
 2. **Stored as xarray dimension names**:
    - Axis names (axes[].name) -> Dataset.dims
 
-3. **Stored in attrs** (no native xarray representation):
+3. **Stored in DataTree.name**:
+   - Image name (multiscales[].name) -> DataTree root node name
+
+4. **Stored in attrs** (no native xarray representation):
    - Axis types (axes[].type)
    - Axis units (axes[].unit) - stored for reference, also derivable from coords
    - Axis orientations (axes[].orientation)
-   - Image name
    - OME-NGFF version
    - Multiscale paths/resolutions
    - Channel colors (omero.channels[].color)
@@ -65,7 +67,7 @@ def metadata_to_xarray_attrs(metadata_dict: dict[str, Any]) -> dict[str, Any]:
     Examples
     --------
     >>> metadata = {
-    ...     'name': 'image',
+    ...     'name': 'image',  # Will be stored in DataTree.name, not attrs
     ...     'version': '0.4',
     ...     'axes': [
     ...         {'name': 'c', 'type': 'channel'},
@@ -78,16 +80,15 @@ def metadata_to_xarray_attrs(metadata_dict: dict[str, Any]) -> dict[str, Any]:
     ...     },
     ... }
     >>> attrs = metadata_to_xarray_attrs(metadata)
-    >>> attrs['ome_name']
-    'image'
+    >>> attrs['ome_version']
+    '0.4'
     >>> attrs['ome_axes_types']
     ['channel', 'space']
     """
     attrs = {}
 
     # Basic metadata
-    if "name" in metadata_dict:
-        attrs["ome_name"] = metadata_dict["name"]
+    # Note: 'name' is stored in DataTree.name, not attrs
     if "version" in metadata_dict:
         attrs["ome_version"] = metadata_dict["version"]
 
@@ -180,11 +181,10 @@ def xarray_to_metadata(
     ...         coords={'c': ['DAPI', 'GFP']},
     ...     ),
     ... })
-    >>> ds.attrs['ome_name'] = 'test'
     >>> ds.attrs['ome_version'] = '0.4'
     >>> metadata = xarray_to_metadata(ds, preserve_original=False)
-    >>> metadata['name']
-    'test'
+    >>> metadata['version']
+    '0.4'
     """
     # Start with original metadata if available and requested
     if preserve_original and "ome_ngff_metadata" in dataset.attrs:
@@ -193,8 +193,8 @@ def xarray_to_metadata(
         metadata = {}
 
     # Update basic metadata from attrs
-    if "ome_name" in dataset.attrs:
-        metadata["name"] = dataset.attrs["ome_name"]
+    # Note: 'name' should come from DataTree.name when writing DataTree,
+    # not from Dataset attrs
     if "ome_version" in dataset.attrs:
         metadata["version"] = dataset.attrs["ome_version"]
 

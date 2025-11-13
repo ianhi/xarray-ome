@@ -133,9 +133,19 @@ def write_ome_datatree(
     >>> dt = open_ome_datatree("input.ome.zarr")
     >>> write_ome_datatree(dt, "output.ome.zarr")
     """
+
     # Get scale levels in order
+    # Node names can be "scale0", "scale1" or "scale0_image", "scale1_image", etc.
+    def extract_scale_number(name: str) -> int:
+        if name.startswith("scale"):
+            # Extract number after "scale" and before any underscore
+            after_scale = name[5:]  # Remove "scale" prefix
+            num_str = after_scale.split("_")[0]  # Get part before underscore (if any)
+            return int(num_str)
+        return 0
+
     scale_nodes = sorted(
-        [(int(name.replace("scale", "")), child) for name, child in datatree.children.items()],
+        [(extract_scale_number(name), child) for name, child in datatree.children.items()],
         key=lambda x: x[0],
     )
 

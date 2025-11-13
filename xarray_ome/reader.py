@@ -74,10 +74,25 @@ def open_ome_datatree(path: str | Path, validate: bool = False) -> xr.DataTree:
 
     # Convert each scale level to a Dataset and create child nodes
     children = {}
+    datasets_list = metadata_dict.get("datasets", [])
     for i, ngff_image in enumerate(multiscales.images):
         dataset = _ngff_image_to_dataset(ngff_image, metadata_dict)
-        scale_name = f"scale{i}"
-        children[scale_name] = xr.DataTree(dataset, name=scale_name)
+
+        # Get the path from metadata, use it as name
+        # If it's just a number or simple index, prepend "scale"
+        if i < len(datasets_list) and "path" in datasets_list[i]:
+            path_str: str = str(datasets_list[i]["path"])
+            # If path is numeric, prepend "scale"
+            if path_str.isdigit():
+                node_name = f"scale{path_str}"
+            else:
+                # Replace slashes with underscores since DataTree names can't contain "/"
+                node_name = path_str.replace("/", "_")
+        else:
+            # Fallback if no path info
+            node_name = f"scale{i}"
+
+        children[node_name] = xr.DataTree(dataset, name=node_name)
 
     # Create the root DataTree with children
     # Use the multiscale name from metadata if available

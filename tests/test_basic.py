@@ -63,20 +63,21 @@ def test_open_ome_datatree(tmp_ome_zarr: Path) -> None:
     # Check it's a DataTree
     assert isinstance(dt, xr.DataTree)
 
-    # Check children exist (should have 3 scales: 0, 1, 2)
+    # Check children exist (should have 3 scales)
+    # Names are derived from OME-NGFF dataset paths
     assert len(dt.children) == 3
-    assert "scale0" in dt.children
-    assert "scale1" in dt.children
-    assert "scale2" in dt.children
+    assert "scale0_test_image" in dt.children
+    assert "scale1_test_image" in dt.children
+    assert "scale2_test_image" in dt.children
 
     # Check metadata is present in root
     assert "ome_ngff_metadata" in dt.attrs
 
     # Check each scale level
     for scale_name, expected_shape in [
-        ("scale0", (2, 5, 10, 10)),
-        ("scale1", (2, 3, 5, 5)),
-        ("scale2", (2, 2, 3, 3)),
+        ("scale0_test_image", (2, 5, 10, 10)),
+        ("scale1_test_image", (2, 3, 5, 5)),
+        ("scale2_test_image", (2, 2, 3, 3)),
     ]:
         child = dt[scale_name]
         ds = child.ds
@@ -170,4 +171,4 @@ def test_single_scale_file(tmp_ome_zarr_single_scale: Path) -> None:
     # DataTree should have only one scale
     dt = open_ome_datatree(str(tmp_ome_zarr_single_scale))
     assert len(dt.children) == 1
-    assert "scale0" in dt.children
+    assert "scale0_simple_image" in dt.children
