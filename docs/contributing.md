@@ -30,8 +30,9 @@ xarray-ome/
 ├── xarray_ome/           # Main package
 │   ├── __init__.py       # Package exports
 │   ├── reader.py         # Reading functions
-│   ├── writer.py         # Writing functions (TODO)
+│   ├── writer.py         # Writing functions
 │   ├── transforms.py     # Coordinate transformations
+│   ├── backend.py        # Xarray backend integration
 │   └── _store_utils.py   # Store type detection
 ├── tests/                # Test suite
 ├── examples/             # Example scripts

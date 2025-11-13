@@ -33,11 +33,14 @@ Branch: `implement-ngff-zarr-integration`
 - Writing functionality (write_ome_dataset, write_ome_datatree)
 - Comprehensive test suite (42 tests: reading, writing, transforms, backend, integration)
 - Xarray backend integration (engine="ome-zarr")
-- Complete Sphinx documentation with MyST Markdown
+- Complete Sphinx documentation with MyST Markdown and executable notebooks
 - Integration tests with real IDR sample data
+- Channel label extraction from OME metadata (omero.channels)
+- Read the Docs configuration with uv support
 
 **Future Enhancements:**
 
+- Add working code example at the very start of docs homepage
 - HCS plate structure support
 - Performance optimizations
 - Integration with visualization tools

@@ -64,3 +64,13 @@ From the author of that library ([@d-v-b](https://github.com/d-v-b))
 
 **Note**: We support all OME-NGFF versions (v0.1-v0.5) for reading through ngff-zarr.
 Writing is supported for v0.4 and v0.5 (the current standard versions).
+
+## Recent Enhancements
+
+Beyond the original plan, the following enhancements have been added:
+
+- **Channel label support**: Automatically extracts channel names from OME metadata (`omero.channels[].label`) and uses them as xarray coordinate values
+- **String dtype coordinates**: Channel coordinates use string dtype (instead of object) for better type safety
+- **Executable documentation**: MyST-NB integration allows documentation examples to execute during build
+- **Read the Docs**: Configured with uv for dependency management
+- **Comprehensive metadata handling**: All relevant OME-NGFF metadata is preserved in xarray attrs for round-tripping

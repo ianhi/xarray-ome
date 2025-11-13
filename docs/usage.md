@@ -243,8 +243,7 @@ with dask.config.set(scheduler="threads", num_workers=4):
 ### Current Limitations
 
 - **HCS/Plate structures not supported**: Only simple multiscale images are currently supported. High Content Screening (HCS) plate/well structures will raise an informative error.
-- **Read-only**: Writing OME-Zarr files is not yet implemented.
-- **OME-NGFF v0.4+**: Tested primarily with OME-NGFF versions 0.4 and 0.5.
+- **OME-NGFF v0.4+**: Tested primarily with OME-NGFF versions 0.4 and 0.5 for writing (reading supports v0.1-v0.5).
 
 ### Error Handling
 
