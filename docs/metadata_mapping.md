@@ -180,7 +180,7 @@ Label images are not yet supported. When implemented, they will likely be stored
 
 **OME-NGFF Spec**: [§2.7 Plate](https://ngff.openmicroscopy.org/0.5/#plate-md) | [§2.8 Well](https://ngff.openmicroscopy.org/0.5/#well-md)
 
-HCS (High Content Screening) plate structures are not yet supported. See [TODO.md](../TODO.md) for implementation notes.
+HCS (High Content Screening) plate structures are not yet supported. See TODO.md in the project root for implementation notes.
 
 ---
 
