@@ -92,7 +92,7 @@ Multiscales metadata describes the image pyramid structure.
 
 | OME-NGFF Field | xarray Location | Notes |
 |----------------|-----------------|-------|
-| `name` | `attrs['ome_name']` | Image identifier |
+| `name` | **DataTree.name** and `attrs['ome_name']` | Image identifier becomes DataTree root name |
 | `version` | `attrs['ome_version']` | OME-NGFF spec version |
 | `type` | Not currently mapped | Downscaling method |
 | `metadata` | Not currently mapped | Additional downscaling info |
@@ -105,8 +105,11 @@ Multiscales metadata describes the image pyramid structure.
 ```python
 dt = xr.open_datatree("image.ome.zarr", engine="ome-zarr")
 
+# Name is stored in DataTree.name attribute
+print(dt.name)  # 'image' (from OME-NGFF metadata)
+
 # Multiscale info in root attrs
-print(dt.attrs['ome_name'])  # 'image'
+print(dt.attrs['ome_name'])  # 'image' (also preserved here)
 print(dt.attrs['ome_version'])  # '0.4'
 print(dt.attrs['ome_num_resolutions'])  # 3
 print(dt.attrs['ome_multiscale_paths'])  # ['0', '1', '2']

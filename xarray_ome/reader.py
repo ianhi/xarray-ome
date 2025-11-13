@@ -80,7 +80,9 @@ def open_ome_datatree(path: str | Path, validate: bool = False) -> xr.DataTree:
         children[scale_name] = xr.DataTree(dataset, name=scale_name)
 
     # Create the root DataTree with children
-    dt = xr.DataTree(children=children, name="root")
+    # Use the multiscale name from metadata if available
+    root_name = metadata_dict.get("name", "root")
+    dt = xr.DataTree(children=children, name=root_name)
 
     # Add OME-NGFF metadata as attrs (coordinate-based metadata is in coords)
     metadata_attrs = metadata_to_xarray_attrs(metadata_dict)
