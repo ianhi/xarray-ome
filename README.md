@@ -13,6 +13,18 @@ This package provides a simple interface for working with OME-Zarr (OME-NGFF) fi
 
 Built on [ngff-zarr](https://ngff-zarr.readthedocs.io/) for robust OME-NGFF support.
 
+**Goals:**
+
+- Ability to load any ome-zarr into xarray
+- ome metadata/transforms/coordinates get correctly converted to xarray equivalents
+- Write a properly configured xarray object to a valid ome-zarr store
+- Provide a backend to xarray so `xr.open_zarr(some-ome.zarr")` just works
+
+**Non-Goals:**
+
+- in memory manipulation e.g. multiscale generation (may add as goal)
+- ability to read or write any other image formats
+
 ## Installation
 
 ### From PyPI (when released)
@@ -24,7 +36,7 @@ pip install xarray-ome
 ### Local development install
 
 ```bash
-git clone https://github.com/your-org/xarray-ome.git
+git clone https://github.com/ianhi/xarray-ome.git
 cd xarray-ome
 uv sync
 ```
