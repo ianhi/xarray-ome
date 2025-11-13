@@ -245,22 +245,76 @@ write_ome_datatree(dt, "modified.ome.zarr")
 
 ## Metadata Attributes
 
-### DataTree Attributes
+### Overview
 
-When using `open_ome_datatree()`, the root node contains:
+OME-NGFF metadata is broken out into separate, readable attributes for easy access. The complete metadata dict is also preserved for round-tripping.
+
+### Common Attributes (DataTree and Dataset)
+
+These attributes are present in both DataTree root nodes and Datasets:
+
+- **ome_name** : `str`
+
+  Image name from OME-NGFF metadata.
+  Example: `'image'`
+
+- **ome_version** : `str`
+
+  OME-NGFF specification version.
+  Example: `'0.4'`
+
+- **ome_axes** : `list[str]`
+
+  Axis names in order.
+  Example: `['c', 'z', 'y', 'x']`
+
+- **ome_axes_types** : `list[str | None]`
+
+  Axis types (e.g., 'channel', 'space', 'time').
+  Example: `['channel', 'space', 'space', 'space']`
+
+- **ome_axes_units** : `dict[str, str]` (optional)
+
+  Physical units for axes that have them.
+  Example: `{'z': 'micrometer', 'y': 'micrometer', 'x': 'micrometer'}`
+
+- **ome_axes_orientations** : `dict[str, str]` (optional)
+
+  Anatomical orientation for spatial axes (if RFC-4 metadata present).
+
+- **ome_num_resolutions** : `int`
+
+  Number of resolution levels in the multiscale pyramid.
+  Example: `3`
+
+- **ome_multiscale_paths** : `list[str]`
+
+  Paths to each resolution level.
+  Example: `['0', '1', '2']`
+
+- **ome_channels** : `list[str]` (optional)
+
+  Channel labels from `omero.channels[].label`.
+  Example: `['LaminB1', 'Dapi']`
+
+- **ome_channel_colors** : `list[str]` (optional)
+
+  Channel colors (hex RGB) from `omero.channels[].color`.
+  Example: `['0000FF', 'FFFF00']`
+
+- **ome_channel_windows** : `list[dict]` (optional)
+
+  Rendering window settings for each channel from `omero.channels[].window`.
+  Example: `[{'min': 0.0, 'max': 65535.0, 'start': 0.0, 'end': 1500.0}, ...]`
 
 - **ome_ngff_metadata** : `dict`
 
-  Complete OME-NGFF metadata including:
-  - `axes`: Axis definitions (name, type, unit)
-  - `datasets`: Dataset paths and coordinate transformations
-  - `version`: OME-NGFF specification version
-  - `name`: Image name
-  - Additional metadata fields
+  Complete OME-NGFF metadata for round-tripping. Contains all metadata
+  fields in their original nested structure.
 
-### Dataset Attributes
+### Dataset-Only Attributes
 
-Each Dataset (from `open_ome_dataset()` or DataTree child nodes) contains:
+Datasets also contain coordinate transformation information:
 
 - **ome_scale** : `dict[str, float]`
 
@@ -272,32 +326,17 @@ Each Dataset (from `open_ome_dataset()` or DataTree child nodes) contains:
   Translation offsets for each dimension. Maps dimension names to offset values.
   Example: `{'c': 0.0, 'z': 0.0, 'y': 0.0, 'x': 0.0}`
 
-- **ome_axes_units** : `dict[str, str | None]`
-
-  Physical units for each dimension.
-  Example: `{'c': None, 'z': 'micrometer', 'y': 'micrometer', 'x': 'micrometer'}`
-
-- **ome_axes_orientations** : `dict[str, str]` (optional)
-
-  Anatomical orientation for spatial axes (if RFC-4 metadata present).
-
 - **ome_ngff_resolution** : `int`
 
   The resolution level index (only in Datasets from `open_ome_dataset()`).
 
-- **ome_ngff_metadata** : `dict`
-
-  Full OME-NGFF metadata (only in Datasets from `open_ome_dataset()`).
-
 - **ome_image_name** : `str` (optional)
 
-  Image name from OME-NGFF metadata, if present.
+  Image name from OME-NGFF metadata (duplicates `ome_name` for backward compatibility).
 
 - **ome_channel_labels** : `list[str]` (optional)
 
-  Channel labels extracted from `omero.channels[].label` metadata.
-  Used as coordinate values for the channel dimension when available.
-  Example: `['LaminB1', 'Dapi']`
+  Channel labels (duplicates `ome_channels` for backward compatibility).
 
 ### Coordinate Labels
 
