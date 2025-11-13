@@ -45,24 +45,29 @@ def open_ome_datatree(path: str | Path, validate: bool = False) -> xr.DataTree:
     Currently only supports simple multiscale images. HCS (High Content Screening)
     plate structures are not yet supported.
     """
+    # First check if this is actually an OME-Zarr store
+    store_type = _detect_store_type(str(path))
+
+    if store_type == "unknown":
+        msg = (
+            f"The zarr store at '{path}' does not appear to be OME-NGFF format. "
+            "It may be a regular zarr file. Try opening with engine='zarr' instead."
+        )
+        raise ValueError(msg)
+
+    if store_type == "hcs":
+        msg = (
+            f"The OME-Zarr store at '{path}' appears to be an HCS (High Content "
+            "Screening) plate structure, which is not yet supported. "
+            "Currently only simple multiscale images are supported."
+        )
+        raise ValueError(msg)
+
     try:
         multiscales = from_ngff_zarr(str(path), validate=validate)
     except KeyError as e:
-        if "multiscales" in str(e):
-            store_type = _detect_store_type(str(path))
-            if store_type == "hcs":
-                msg = (
-                    f"The OME-Zarr store at '{path}' appears to be an HCS (High Content "
-                    "Screening) plate structure, which is not yet supported. "
-                    "Currently only simple multiscale images are supported."
-                )
-                raise ValueError(msg) from e
-            msg = (
-                f"The OME-Zarr store at '{path}' does not contain multiscale metadata. "
-                "It may be an unsupported OME-Zarr structure."
-            )
-            raise ValueError(msg) from e
-        raise
+        # Fallback error handling
+        raise ValueError(f"Failed to parse OME-NGFF metadata from '{path}'") from e
 
     # Extract metadata dict for passing to conversion
     metadata_dict = _metadata_to_dict(multiscales.metadata)
@@ -238,24 +243,29 @@ def open_ome_dataset(path: str | Path, resolution: int = 0, validate: bool = Fal
     Currently only supports simple multiscale images. HCS (High Content Screening)
     plate structures are not yet supported.
     """
+    # First check if this is actually an OME-Zarr store
+    store_type = _detect_store_type(str(path))
+
+    if store_type == "unknown":
+        msg = (
+            f"The zarr store at '{path}' does not appear to be OME-NGFF format. "
+            "It may be a regular zarr file. Try opening with engine='zarr' instead."
+        )
+        raise ValueError(msg)
+
+    if store_type == "hcs":
+        msg = (
+            f"The OME-Zarr store at '{path}' appears to be an HCS (High Content "
+            "Screening) plate structure, which is not yet supported. "
+            "Currently only simple multiscale images are supported."
+        )
+        raise ValueError(msg)
+
     try:
         multiscales = from_ngff_zarr(str(path), validate=validate)
     except KeyError as e:
-        if "multiscales" in str(e):
-            store_type = _detect_store_type(str(path))
-            if store_type == "hcs":
-                msg = (
-                    f"The OME-Zarr store at '{path}' appears to be an HCS (High Content "
-                    "Screening) plate structure, which is not yet supported. "
-                    "Currently only simple multiscale images are supported."
-                )
-                raise ValueError(msg) from e
-            msg = (
-                f"The OME-Zarr store at '{path}' does not contain multiscale metadata. "
-                "It may be an unsupported OME-Zarr structure."
-            )
-            raise ValueError(msg) from e
-        raise
+        # Fallback error handling
+        raise ValueError(f"Failed to parse OME-NGFF metadata from '{path}'") from e
 
     # Extract metadata dict for passing to conversion
     metadata_dict = _metadata_to_dict(multiscales.metadata)
