@@ -139,6 +139,7 @@ graph LR
 :maxdepth: 2
 
 usage
+metadata_mapping
 examples
 api
 contributing

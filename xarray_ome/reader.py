@@ -8,6 +8,7 @@ import xarray as xr
 from ngff_zarr import NgffImage, from_ngff_zarr  # type: ignore[import-untyped]
 
 from ._store_utils import _detect_store_type
+from .metadata import metadata_to_xarray_attrs
 from .transforms import transforms_to_coords
 
 if TYPE_CHECKING:
@@ -44,24 +45,29 @@ def open_ome_datatree(path: str | Path, validate: bool = False) -> xr.DataTree:
     Currently only supports simple multiscale images. HCS (High Content Screening)
     plate structures are not yet supported.
     """
+    # First check if this is actually an OME-Zarr store
+    store_type = _detect_store_type(str(path))
+
+    if store_type == "unknown":
+        msg = (
+            f"The zarr store at '{path}' does not appear to be OME-NGFF format. "
+            "It may be a regular zarr file. Try opening with engine='zarr' instead."
+        )
+        raise ValueError(msg)
+
+    if store_type == "hcs":
+        msg = (
+            f"The OME-Zarr store at '{path}' appears to be an HCS (High Content "
+            "Screening) plate structure, which is not yet supported. "
+            "Currently only simple multiscale images are supported."
+        )
+        raise ValueError(msg)
+
     try:
         multiscales = from_ngff_zarr(str(path), validate=validate)
     except KeyError as e:
-        if "multiscales" in str(e):
-            store_type = _detect_store_type(str(path))
-            if store_type == "hcs":
-                msg = (
-                    f"The OME-Zarr store at '{path}' appears to be an HCS (High Content "
-                    "Screening) plate structure, which is not yet supported. "
-                    "Currently only simple multiscale images are supported."
-                )
-                raise ValueError(msg) from e
-            msg = (
-                f"The OME-Zarr store at '{path}' does not contain multiscale metadata. "
-                "It may be an unsupported OME-Zarr structure."
-            )
-            raise ValueError(msg) from e
-        raise
+        # Fallback error handling
+        raise ValueError(f"Failed to parse OME-NGFF metadata from '{path}'") from e
 
     # Extract metadata dict for passing to conversion
     metadata_dict = _metadata_to_dict(multiscales.metadata)
@@ -76,8 +82,9 @@ def open_ome_datatree(path: str | Path, validate: bool = False) -> xr.DataTree:
     # Create the root DataTree with children
     dt = xr.DataTree(children=children, name="root")
 
-    # Store the full OME-NGFF metadata in root attrs
-    dt.attrs["ome_ngff_metadata"] = metadata_dict
+    # Add OME-NGFF metadata as attrs (coordinate-based metadata is in coords)
+    metadata_attrs = metadata_to_xarray_attrs(metadata_dict)
+    dt.attrs.update(metadata_attrs)
 
     return dt
 
@@ -188,22 +195,9 @@ def _ngff_image_to_dataset(
     dataset = xr.Dataset({ngff_image.name: data_array})
 
     # Store scale and translation in attrs for round-tripping
+    # These are needed for coords_to_transforms() to work efficiently
     dataset.attrs["ome_scale"] = ngff_image.scale
     dataset.attrs["ome_translation"] = ngff_image.translation
-    if ngff_image.axes_units:
-        dataset.attrs["ome_axes_units"] = dict(ngff_image.axes_units)
-    if ngff_image.axes_orientations:
-        dataset.attrs["ome_axes_orientations"] = {
-            k: str(v) for k, v in ngff_image.axes_orientations.items()
-        }
-
-    # Store image name from OME metadata if available
-    if metadata and "name" in metadata:
-        dataset.attrs["ome_image_name"] = metadata["name"]
-
-    # Store channel information for reference
-    if channel_labels:
-        dataset.attrs["ome_channel_labels"] = channel_labels
 
     return dataset
 
@@ -249,24 +243,29 @@ def open_ome_dataset(path: str | Path, resolution: int = 0, validate: bool = Fal
     Currently only supports simple multiscale images. HCS (High Content Screening)
     plate structures are not yet supported.
     """
+    # First check if this is actually an OME-Zarr store
+    store_type = _detect_store_type(str(path))
+
+    if store_type == "unknown":
+        msg = (
+            f"The zarr store at '{path}' does not appear to be OME-NGFF format. "
+            "It may be a regular zarr file. Try opening with engine='zarr' instead."
+        )
+        raise ValueError(msg)
+
+    if store_type == "hcs":
+        msg = (
+            f"The OME-Zarr store at '{path}' appears to be an HCS (High Content "
+            "Screening) plate structure, which is not yet supported. "
+            "Currently only simple multiscale images are supported."
+        )
+        raise ValueError(msg)
+
     try:
         multiscales = from_ngff_zarr(str(path), validate=validate)
     except KeyError as e:
-        if "multiscales" in str(e):
-            store_type = _detect_store_type(str(path))
-            if store_type == "hcs":
-                msg = (
-                    f"The OME-Zarr store at '{path}' appears to be an HCS (High Content "
-                    "Screening) plate structure, which is not yet supported. "
-                    "Currently only simple multiscale images are supported."
-                )
-                raise ValueError(msg) from e
-            msg = (
-                f"The OME-Zarr store at '{path}' does not contain multiscale metadata. "
-                "It may be an unsupported OME-Zarr structure."
-            )
-            raise ValueError(msg) from e
-        raise
+        # Fallback error handling
+        raise ValueError(f"Failed to parse OME-NGFF metadata from '{path}'") from e
 
     # Extract metadata dict for passing to conversion
     metadata_dict = _metadata_to_dict(multiscales.metadata)
@@ -287,6 +286,9 @@ def open_ome_dataset(path: str | Path, resolution: int = 0, validate: bool = Fal
 
     # Store metadata about resolution level
     dataset.attrs["ome_ngff_resolution"] = resolution
-    dataset.attrs["ome_ngff_metadata"] = metadata_dict
+
+    # Add OME-NGFF metadata as attrs (coordinate-based metadata is in coords)
+    metadata_attrs = metadata_to_xarray_attrs(metadata_dict)
+    dataset.attrs.update(metadata_attrs)
 
     return dataset

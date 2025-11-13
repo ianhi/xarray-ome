@@ -6,8 +6,10 @@ import os
 from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any
 
+import xarray as xr
 from xarray.backends import BackendEntrypoint
 
+from xarray_ome._store_utils import _detect_store_type
 from xarray_ome.reader import open_ome_dataset, open_ome_datatree
 
 if TYPE_CHECKING:
@@ -44,6 +46,9 @@ class OmeZarrBackendEntrypoint(BackendEntrypoint):
     ) -> Dataset:
         """Open a single resolution level from an OME-Zarr store.
 
+        If the zarr store is not OME-NGFF format, falls back to xarray's
+        native zarr backend.
+
         Parameters
         ----------
         filename_or_obj : str or PathLike
@@ -61,6 +66,14 @@ class OmeZarrBackendEntrypoint(BackendEntrypoint):
             Dataset containing the requested resolution level.
         """
         path = str(filename_or_obj) if isinstance(filename_or_obj, os.PathLike) else filename_or_obj
+
+        # Check if this is actually an OME-Zarr store
+        store_type = _detect_store_type(path)
+
+        if store_type == "unknown":
+            # Not OME-NGFF format - delegate to xarray's zarr backend
+            return xr.open_dataset(path, engine="zarr", drop_variables=drop_variables)
+
         ds = open_ome_dataset(path, resolution=resolution, validate=validate)
 
         if drop_variables is not None:
@@ -77,6 +90,9 @@ class OmeZarrBackendEntrypoint(BackendEntrypoint):
     ) -> DataTree:
         """Open an OME-Zarr store as a DataTree with all resolution levels.
 
+        If the zarr store is not OME-NGFF format, falls back to xarray's
+        native zarr backend (returning a DataTree with single node).
+
         Parameters
         ----------
         filename_or_obj : str or PathLike
@@ -92,6 +108,16 @@ class OmeZarrBackendEntrypoint(BackendEntrypoint):
             DataTree containing all resolution levels.
         """
         path = str(filename_or_obj) if isinstance(filename_or_obj, os.PathLike) else filename_or_obj
+
+        # Check if this is actually an OME-Zarr store
+        store_type = _detect_store_type(path)
+
+        if store_type == "unknown":
+            # Not OME-NGFF format - delegate to xarray's zarr backend
+            # Wrap single dataset in DataTree
+            ds = xr.open_dataset(path, engine="zarr", drop_variables=drop_variables)
+            return xr.DataTree(ds)
+
         dt = open_ome_datatree(path, validate=validate)
 
         if drop_variables is not None:
