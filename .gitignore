@@ -54,6 +54,7 @@ data/
 
 # Documentation builds
 docs/_build/
+research/_build/
 docs/_templates/
 # Keep docs/_static/ for logo and other static assets
 
