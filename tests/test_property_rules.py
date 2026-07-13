@@ -148,22 +148,14 @@ def readable_pairs(
     )
 
 
-def _non_canonical_names(axlist: list[dict[str, Any]]) -> bool:
-    """True when at least one axis breaks the canonical role<->name mapping.
-
-    The complement of :func:`_canonical_names`; used to steer the generator away
-    from the readable subset so we exercise the reader's *rejection* path rather
-    than its happy path.
-    """
-    return not _canonical_names(axlist)
-
-
 # Non-representable docs: axes that violate the canonical role<->name mapping
-# (e.g. a ``space`` axis named ``t``), which the reader must reject cleanly
-# rather than crash on. ``allow_custom`` stays on so custom/typeless axes -- also
-# outside the representable subset -- are in the mix.
+# (e.g. a ``space`` axis named ``t`` -- the negation of :func:`_canonical_names`),
+# which the reader must reject cleanly rather than crash on. ``allow_custom`` stays
+# on so custom/typeless axes -- also outside the representable subset -- are in the mix.
 _NON_REPRESENTABLE_PAIRS = (
-    materializable_image(version="0.5", axes=axes_strategy().filter(_non_canonical_names))
+    materializable_image(
+        version="0.5", axes=axes_strategy().filter(lambda ax: not _canonical_names(ax))
+    )
     .map(lambda p: (_normalize(p[0]), p[1]))
     .filter(lambda p: not is_representable_subset(p[0]))
 )

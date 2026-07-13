@@ -4526,7 +4526,7 @@ requires-dist = [
     { name = "s3fs", specifier = ">=2025.9.0" },
     { name = "scipy", specifier = ">=1.17.1" },
     { name = "xarray", specifier = ">=2026.1.0" },
-    { name = "zarr", specifier = ">=2.18.0" },
+    { name = "zarr", specifier = ">=3.0" },
 ]
 
 [package.metadata.requires-dev]

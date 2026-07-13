@@ -24,6 +24,11 @@ jobs:
         with:
           version: "latest"
 
+      # Pinned to 3.11 on purpose: the dev deps include ome-zarr-hypothesis via a
+      # machine-local path source gated behind python>=3.12 (see pyproject
+      # [tool.uv.sources]). On 3.12 `uv sync` would try to resolve that absent
+      # path and fail in CI. 3.11 excludes it (the property suite importorskips),
+      # so drift in the real runtime deps (xarray/zarr/ngff-zarr) still surfaces.
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
