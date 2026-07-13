@@ -1,0 +1,42 @@
+name: Dependency drift
+
+# Guards against silent dependency drift. A stale lockfile once pinned xarray to
+# a version with a size-1 CoordinateTransform bug that a newer release had
+# already fixed (see notes/upstream-ideas.md). This job upgrades every dependency
+# to its latest compatible release each week and runs the suite, so drift -- a
+# regression OR a fix we're missing -- surfaces on a schedule instead of by luck.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # every Monday 06:00 UTC
+  workflow_dispatch: {} # allow manual runs
+
+jobs:
+  upgrade-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for hatch-vcs to determine version
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Upgrade the lockfile to latest compatible releases
+        run: uv lock --upgrade
+
+      - name: Show what drifted
+        run: git --no-pager diff -- uv.lock || true
+
+      - name: Install dependencies (upgraded)
+        run: uv sync --all-groups
+
+      - name: Run tests against upgraded dependencies
+        run: uv run pytest -v
