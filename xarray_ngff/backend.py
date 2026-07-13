@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any
 import xarray as xr
 from xarray.backends import BackendEntrypoint
 
-from xarray_ome._store_utils import _detect_store_type
-from xarray_ome.reader import open_ome_dataset, open_ome_datatree
+from xarray_ngff._store_utils import _detect_store_type
+from xarray_ngff.reader import open_ngff_dataset, open_ngff_datatree
 
 if TYPE_CHECKING:
     from xarray.core.dataset import Dataset
@@ -31,7 +31,7 @@ class OmeZarrBackendEntrypoint(BackendEntrypoint):
     """
 
     description = "Open OME-Zarr (OME-NGFF) files in xarray"
-    url = "https://github.com/your-org/xarray-ome"
+    url = "https://github.com/your-org/xarray-ngff"
     supports_groups = True
 
     open_dataset_parameters = ("resolution", "validate")
@@ -46,7 +46,7 @@ class OmeZarrBackendEntrypoint(BackendEntrypoint):
     ) -> Dataset:
         """Open a single resolution level from an OME-Zarr store.
 
-        If the zarr store is not OME-NGFF format, falls back to xarray's
+        If the zarr store is not an OME-Zarr store, falls back to xarray's
         native zarr backend.
 
         Parameters
@@ -74,7 +74,7 @@ class OmeZarrBackendEntrypoint(BackendEntrypoint):
             # Not OME-NGFF format - delegate to xarray's zarr backend
             return xr.open_dataset(path, engine="zarr", drop_variables=drop_variables)
 
-        ds = open_ome_dataset(path, resolution=resolution, validate=validate)
+        ds = open_ngff_dataset(path, resolution=resolution, validate=validate)
 
         if drop_variables is not None:
             ds = ds.drop_vars(drop_variables)
@@ -90,7 +90,7 @@ class OmeZarrBackendEntrypoint(BackendEntrypoint):
     ) -> DataTree:
         """Open an OME-Zarr store as a DataTree with all resolution levels.
 
-        If the zarr store is not OME-NGFF format, falls back to xarray's
+        If the zarr store is not an OME-Zarr store, falls back to xarray's
         native zarr backend (returning a DataTree with single node).
 
         Parameters
@@ -118,7 +118,7 @@ class OmeZarrBackendEntrypoint(BackendEntrypoint):
             ds = xr.open_dataset(path, engine="zarr", drop_variables=drop_variables)
             return xr.DataTree(ds)
 
-        dt = open_ome_datatree(path, validate=validate)
+        dt = open_ngff_datatree(path, validate=validate)
 
         if drop_variables is not None:
             if isinstance(drop_variables, str):

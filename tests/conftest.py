@@ -1,4 +1,4 @@
-"""Pytest fixtures for xarray-ome tests."""
+"""Pytest fixtures for xarray-ngff tests."""
 
 from __future__ import annotations
 
@@ -11,6 +11,22 @@ from ngff_zarr import to_multiscales, to_ngff_image, to_ngff_zarr  # type: ignor
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+# Hypothesis settings profiles for the property suite (test_property_rules.py),
+# mirroring the ome-zarr-hypothesis convention. Select with HYPOTHESIS_PROFILE:
+#   dev (25, fast) | default (50) | ci (200, thorough). No-op if hypothesis is
+# absent (the property module importorskips it on Python <3.12).
+try:
+    import os
+
+    from hypothesis import settings
+
+    settings.register_profile("dev", max_examples=25, deadline=None)
+    settings.register_profile("default", max_examples=50, deadline=None)
+    settings.register_profile("ci", max_examples=200, deadline=None)
+    settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "default"))
+except ImportError:
+    pass
 
 
 @pytest.fixture

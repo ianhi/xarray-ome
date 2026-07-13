@@ -1,12 +1,14 @@
 [project]
-name = "xarray-ome"
+name = "xarray-ngff"
 dynamic = ["version"]
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "xarray>=2024.10.0",
-    "ngff-zarr>=0.8.0",
+    # >=2026.1.0: earlier versions raise on selecting a lazy CoordinateTransform-
+    # backed dim down to length 1 (size-1 axes / single z-slice), breaking rule 2.
+    "xarray>=2026.1.0",
+    "ngff-zarr>=0.37",
     "zarr>=2.18.0",
     "numpy>=1.24.0",
     "aiohttp>=3.8.0",
@@ -14,10 +16,16 @@ dependencies = [
     "s3fs>=2025.9.0",
     "matplotlib>=3.10.6",
     "ipympl>=0.9.7",
+    "scipy>=1.17.1",
 ]
 
 [project.entry-points."xarray.backends"]
-ome-zarr = "xarray_ome.backend:OmeZarrBackendEntrypoint"
+ome-zarr = "xarray_ngff.backend:OmeZarrBackendEntrypoint"
+ngff = "xarray_ngff.backend:OmeZarrBackendEntrypoint"
+
+# ``ome-zarr-hypothesis`` (the property-test generator) is a sibling checkout.
+[tool.uv.sources]
+ome-zarr-hypothesis = { path = "../ome-zarr-hypothesis", editable = true }
 
 
 [build-system]
@@ -57,7 +65,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["xarray_ome"]
+source = ["xarray_ngff"]
 omit = ["tests/*"]
 
 [tool.coverage.report]
@@ -78,6 +86,10 @@ dev = [
   "mypy>=1.18.2",
   "myst-nb>=1.3.0",
   "pre-commit>=4.3.0",
+  "hypothesis>=6.156",
+  # Property-test generator (needs Python >=3.12); tests importorskip it, so a
+  # 3.11 env simply skips the property suite while the package stays 3.11+.
+  "ome-zarr-hypothesis; python_version >= '3.12'",
   "pytest>=8.4.2",
   "pytest-cov>=7.0.0",
   "pytest-xdist>=3.8.0",

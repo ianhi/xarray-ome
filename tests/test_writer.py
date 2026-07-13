@@ -1,4 +1,4 @@
-"""Tests for xarray-ome writing functionality."""
+"""Tests for xarray-ngff writing functionality."""
 
 from __future__ import annotations
 
@@ -8,28 +8,45 @@ from typing import TYPE_CHECKING
 import numpy as np
 import xarray as xr
 
-from xarray_ome import (
-    open_ome_dataset,
-    open_ome_datatree,
-    write_ome_dataset,
-    write_ome_datatree,
+from xarray_ngff import (
+    open_ngff_dataset,
+    open_ngff_datatree,
+    write_ngff_dataset,
+    write_ngff_datatree,
 )
+from xarray_ngff.writer import deep_merge
+
+
+def test_deep_merge_replaces_list_values() -> None:
+    """A list value (e.g. `multiscales`) is replaced wholesale, not element-merged."""
+    base = {"multiscales": [{"a": 1}, {"b": 2}], "omero": {"channels": [1, 2, 3]}}
+    override = {"multiscales": [{"c": 3}]}
+
+    merged = deep_merge(base, override)
+
+    # multiscales list is fully replaced by the override
+    assert merged["multiscales"] == [{"c": 3}]
+    # unrelated keys are preserved
+    assert merged["omero"] == {"channels": [1, 2, 3]}
+    # inputs are not mutated
+    assert base["multiscales"] == [{"a": 1}, {"b": 2}]
+
 
 if TYPE_CHECKING:
     pass
 
 
-def test_write_ome_dataset(tmp_ome_zarr: Path, tmp_path: Path) -> None:
+def test_write_ngff_dataset(tmp_ome_zarr: Path, tmp_path: Path) -> None:
     """Test writing a Dataset to OME-Zarr format."""
     # Read original
-    ds_original = open_ome_dataset(str(tmp_ome_zarr))
+    ds_original = open_ngff_dataset(str(tmp_ome_zarr))
 
     # Write to new location
     output_path = tmp_path / "written.ome.zarr"
-    write_ome_dataset(ds_original, str(output_path))
+    write_ngff_dataset(ds_original, str(output_path))
 
     # Read back
-    ds_written = open_ome_dataset(str(output_path))
+    ds_written = open_ngff_dataset(str(output_path))
 
     # Check dimensions match
     assert ds_written.dims == ds_original.dims
@@ -46,34 +63,33 @@ def test_write_ome_dataset(tmp_ome_zarr: Path, tmp_path: Path) -> None:
         )
 
 
-def test_write_ome_dataset_with_scale_factors(
+def test_write_ngff_dataset_with_scale_factors(
     tmp_ome_zarr_single_scale: Path, tmp_path: Path
 ) -> None:
     """Test writing a Dataset with multiscale pyramid generation."""
     # Read single scale
-    ds = open_ome_dataset(str(tmp_ome_zarr_single_scale))
+    ds = open_ngff_dataset(str(tmp_ome_zarr_single_scale))
 
     # Write with scale factors to create pyramid
     output_path = tmp_path / "pyramid.ome.zarr"
-    write_ome_dataset(ds, str(output_path), scale_factors=[2, 4])
+    write_ngff_dataset(ds, str(output_path), scale_factors=[2, 4])
 
     # Read back as DataTree to check pyramid
-    dt = open_ome_datatree(str(output_path))
+    dt = open_ngff_datatree(str(output_path))
 
-    # Should have 3 levels (original + 2 downsampled)
+    # Should have 3 levels (original + 2 downsampled), named by level index.
     assert len(dt.children) == 3
-    # Writer uses "image" as the name (from the data variable)
-    assert "scale0_image" in dt.children
-    assert "scale1_image" in dt.children
-    assert "scale2_image" in dt.children
+    assert "0" in dt.children
+    assert "1" in dt.children
+    assert "2" in dt.children
 
     # Get data variable name
-    data_var_name = list(dt["scale0_image"].ds.data_vars.keys())[0]
+    data_var_name = list(dt["0"].ds.data_vars.keys())[0]
 
     # Check sizes decrease
-    shape0 = dt["scale0_image"].ds[data_var_name].shape
-    shape1 = dt["scale1_image"].ds[data_var_name].shape
-    shape2 = dt["scale2_image"].ds[data_var_name].shape
+    shape0 = dt["0"].ds[data_var_name].shape
+    shape1 = dt["1"].ds[data_var_name].shape
+    shape2 = dt["2"].ds[data_var_name].shape
 
     assert shape1[0] < shape0[0]  # y dimension smaller
     assert shape1[1] < shape0[1]  # x dimension smaller
@@ -81,17 +97,17 @@ def test_write_ome_dataset_with_scale_factors(
     assert shape2[1] < shape1[1]
 
 
-def test_write_ome_datatree(tmp_ome_zarr: Path, tmp_path: Path) -> None:
+def test_write_ngff_datatree(tmp_ome_zarr: Path, tmp_path: Path) -> None:
     """Test writing a DataTree to OME-Zarr format."""
     # Read original
-    dt_original = open_ome_datatree(str(tmp_ome_zarr))
+    dt_original = open_ngff_datatree(str(tmp_ome_zarr))
 
     # Write to new location
     output_path = tmp_path / "written_tree.ome.zarr"
-    write_ome_datatree(dt_original, str(output_path))
+    write_ngff_datatree(dt_original, str(output_path))
 
     # Read back
-    dt_written = open_ome_datatree(str(output_path))
+    dt_written = open_ngff_datatree(str(output_path))
 
     # Check number of scales match
     assert len(dt_written.children) == len(dt_original.children)
@@ -113,14 +129,14 @@ def test_write_ome_datatree(tmp_ome_zarr: Path, tmp_path: Path) -> None:
 def test_roundtrip_dataset(tmp_ome_zarr: Path, tmp_path: Path) -> None:
     """Test full round-trip: read -> write -> read."""
     # Read original
-    ds1 = open_ome_dataset(str(tmp_ome_zarr))
+    ds1 = open_ngff_dataset(str(tmp_ome_zarr))
 
     # Write
     output_path = tmp_path / "roundtrip.ome.zarr"
-    write_ome_dataset(ds1, str(output_path))
+    write_ngff_dataset(ds1, str(output_path))
 
     # Read back
-    ds2 = open_ome_dataset(str(output_path))
+    ds2 = open_ngff_dataset(str(output_path))
 
     # Get data variable names
     data_var_name1 = list(ds1.data_vars.keys())[0]
@@ -131,22 +147,25 @@ def test_roundtrip_dataset(tmp_ome_zarr: Path, tmp_path: Path) -> None:
     data2 = ds2[data_var_name2].compute()
     np.testing.assert_array_equal(data1.values, data2.values)
 
-    # Check metadata
-    assert ds2.attrs["ome_scale"] == ds1.attrs["ome_scale"]
-    assert ds2.attrs["ome_translation"] == ds1.attrs["ome_translation"]
+    # NEW contract: physical coords survive the round-trip (writer derives
+    # scale/translation from the lazy coords, reader rebuilds them).
+    for axis in ("z", "y", "x"):
+        np.testing.assert_allclose(ds2.coords[axis].values, ds1.coords[axis].values, rtol=1e-5)
+    # Units survive via CF `units` coord attrs.
+    assert ds2["z"].attrs.get("units") == ds1["z"].attrs.get("units")
 
 
 def test_roundtrip_datatree(tmp_ome_zarr: Path, tmp_path: Path) -> None:
     """Test full round-trip for DataTree: read -> write -> read."""
     # Read original
-    dt1 = open_ome_datatree(str(tmp_ome_zarr))
+    dt1 = open_ngff_datatree(str(tmp_ome_zarr))
 
     # Write
     output_path = tmp_path / "roundtrip_tree.ome.zarr"
-    write_ome_datatree(dt1, str(output_path))
+    write_ngff_datatree(dt1, str(output_path))
 
     # Read back
-    dt2 = open_ome_datatree(str(output_path))
+    dt2 = open_ngff_datatree(str(output_path))
 
     # Check all scales by comparing sorted children
     # Note: Node names may differ after round-trip
@@ -171,29 +190,30 @@ def test_roundtrip_datatree(tmp_ome_zarr: Path, tmp_path: Path) -> None:
 def test_write_preserves_metadata(tmp_ome_zarr: Path, tmp_path: Path) -> None:
     """Test that metadata is preserved through write operations."""
     # Read original
-    ds_original = open_ome_dataset(str(tmp_ome_zarr))
+    ds_original = open_ngff_dataset(str(tmp_ome_zarr))
 
     # Write
     output_path = tmp_path / "metadata_test.ome.zarr"
-    write_ome_dataset(ds_original, str(output_path))
+    write_ngff_dataset(ds_original, str(output_path))
 
     # Read back
-    ds_written = open_ome_dataset(str(output_path))
+    ds_written = open_ngff_dataset(str(output_path))
 
-    # Check axes units are preserved
-    assert ds_written.attrs["ome_axes_units"] == ds_original.attrs["ome_axes_units"]
+    # NEW contract: axes units live as CF `units` coord attrs and survive write.
+    for axis in ("z", "y", "x"):
+        assert ds_written[axis].attrs.get("units") == ds_original[axis].attrs.get("units")
 
 
 def test_write_custom_chunks(tmp_ome_zarr_single_scale: Path, tmp_path: Path) -> None:
     """Test writing with custom chunk sizes."""
-    ds = open_ome_dataset(str(tmp_ome_zarr_single_scale))
+    ds = open_ngff_dataset(str(tmp_ome_zarr_single_scale))
 
     # Write with custom chunks
     output_path = tmp_path / "custom_chunks.ome.zarr"
-    write_ome_dataset(ds, str(output_path), chunks=(4, 4))
+    write_ngff_dataset(ds, str(output_path), chunks=(4, 4))
 
     # Read back - should work
-    ds_written = open_ome_dataset(str(output_path))
+    ds_written = open_ngff_dataset(str(output_path))
 
     # Get data variable names
     data_var_name = list(ds.data_vars.keys())[0]
@@ -216,16 +236,12 @@ def test_write_from_computed_data(tmp_path: Path) -> None:
         },
     )
 
-    # Add OME metadata
-    ds.attrs["ome_scale"] = {"y": 0.5, "x": 0.5}
-    ds.attrs["ome_translation"] = {"y": 0.0, "x": 0.0}
-
-    # Write
+    # Write (scale/translation are derived from the coordinate arrays)
     output_path = tmp_path / "computed_data.ome.zarr"
-    write_ome_dataset(ds, str(output_path))
+    write_ngff_dataset(ds, str(output_path))
 
     # Read back
-    ds_read = open_ome_dataset(str(output_path))
+    ds_read = open_ngff_dataset(str(output_path))
 
     # Check data matches
     np.testing.assert_array_equal(ds_read["image"].compute().values, data)

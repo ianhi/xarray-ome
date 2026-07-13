@@ -4,7 +4,7 @@ from pathlib import Path
 
 import xarray as xr
 
-from xarray_ome import open_ome_dataset, open_ome_datatree
+from xarray_ngff import open_ngff_dataset, open_ngff_datatree
 
 
 def test_backend_registered() -> None:
@@ -42,11 +42,11 @@ def test_open_datatree_with_backend(tmp_ome_zarr: Path) -> None:
     """Test opening DataTree using xarray backend."""
     dt_backend = xr.open_datatree(str(tmp_ome_zarr), engine="ome-zarr")
 
-    assert "scale0_test_image" in dt_backend.children
-    assert "scale1_test_image" in dt_backend.children
-    assert "scale2_test_image" in dt_backend.children
+    assert "0" in dt_backend.children
+    assert "1" in dt_backend.children
+    assert "2" in dt_backend.children
 
-    scale0 = dt_backend["scale0_test_image"].ds
+    scale0 = dt_backend["0"].ds
     assert scale0 is not None
 
     data_var_name = list(scale0.data_vars.keys())[0]
@@ -56,7 +56,7 @@ def test_open_datatree_with_backend(tmp_ome_zarr: Path) -> None:
 def test_backend_vs_direct_function_dataset(tmp_ome_zarr: Path) -> None:
     """Test that backend produces same result as direct function call."""
     ds_backend = xr.open_dataset(str(tmp_ome_zarr), engine="ome-zarr")
-    ds_direct = open_ome_dataset(str(tmp_ome_zarr))
+    ds_direct = open_ngff_dataset(str(tmp_ome_zarr))
 
     data_var_backend = list(ds_backend.data_vars.keys())[0]
     data_var_direct = list(ds_direct.data_vars.keys())[0]
@@ -68,7 +68,7 @@ def test_backend_vs_direct_function_dataset(tmp_ome_zarr: Path) -> None:
 def test_backend_vs_direct_function_datatree(tmp_ome_zarr: Path) -> None:
     """Test that backend DataTree matches direct function."""
     dt_backend = xr.open_datatree(str(tmp_ome_zarr), engine="ome-zarr")
-    dt_direct = open_ome_datatree(str(tmp_ome_zarr))
+    dt_direct = open_ngff_datatree(str(tmp_ome_zarr))
 
     assert set(dt_backend.children.keys()) == set(dt_direct.children.keys())
 
@@ -99,7 +99,7 @@ def test_drop_variables_dataset(tmp_ome_zarr: Path) -> None:
 def test_drop_variables_datatree(tmp_ome_zarr: Path) -> None:
     """Test drop_variables parameter with datatree."""
     dt_full = xr.open_datatree(str(tmp_ome_zarr), engine="ome-zarr")
-    scale0_full = dt_full["scale0_test_image"].ds
+    scale0_full = dt_full["0"].ds
     assert scale0_full is not None
     data_var_name = list(scale0_full.data_vars.keys())[0]
 
@@ -114,7 +114,7 @@ def test_drop_variables_datatree(tmp_ome_zarr: Path) -> None:
 
 def test_guess_can_open(tmp_ome_zarr: Path) -> None:
     """Test that backend can identify OME-Zarr files."""
-    from xarray_ome.backend import OmeZarrBackendEntrypoint
+    from xarray_ngff.backend import OmeZarrBackendEntrypoint
 
     backend = OmeZarrBackendEntrypoint()
 
@@ -140,9 +140,9 @@ def test_single_scale_datatree(tmp_ome_zarr_single_scale: Path) -> None:
     dt = xr.open_datatree(str(tmp_ome_zarr_single_scale), engine="ome-zarr")
 
     assert len(dt.children) == 1
-    assert "scale0_simple_image" in dt.children
+    assert "0" in dt.children
 
-    scale0 = dt["scale0_simple_image"].ds
+    scale0 = dt["0"].ds
     assert scale0 is not None
 
     data_var_name = list(scale0.data_vars.keys())[0]

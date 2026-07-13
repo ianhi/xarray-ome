@@ -5,9 +5,10 @@ from __future__ import annotations
 from typing import Hashable
 
 import numpy as np
+import pytest
 import xarray as xr
 
-from xarray_ome.transforms import coords_to_transforms, transforms_to_coords
+from xarray_ngff.transforms import coords_to_transforms, transforms_to_coords
 
 
 def test_transforms_to_coords_basic() -> None:
@@ -80,18 +81,15 @@ def test_coords_to_transforms_from_dataset(
         coords=coords,
     )
 
-    # Store metadata (simulating what we do in reader)
-    ds.attrs["ome_scale"] = sample_scale_3d
-    ds.attrs["ome_translation"] = sample_translation_3d
-
-    # Extract transforms
+    # Extract transforms (computed from the coordinate arrays)
     scale: dict[Hashable, float]
     translation: dict[Hashable, float]
     scale, translation = coords_to_transforms(ds)
 
-    # Should retrieve from attrs (convert to dict for comparison)
-    assert dict(scale) == sample_scale_3d
-    assert dict(translation) == sample_translation_3d
+    # Should recover the scale/translation used to build the coords
+    for dim in sample_dims_3d:
+        assert scale[dim] == pytest.approx(sample_scale_3d[dim])
+        assert translation[dim] == pytest.approx(sample_translation_3d[dim])
 
 
 def test_coords_to_transforms_computed_from_coords() -> None:
@@ -156,15 +154,33 @@ def test_roundtrip_transforms() -> None:
         {"image": (dims, np.zeros(shape))},
         coords=coords,
     )
-    ds.attrs["ome_scale"] = scale_original
-    ds.attrs["ome_translation"] = translation_original
 
-    # Convert back to transforms
+    # Convert back to transforms (computed from the coordinate arrays)
     scale_roundtrip, translation_roundtrip = coords_to_transforms(ds)
 
     # Should match original
-    assert scale_roundtrip == scale_original
-    assert translation_roundtrip == translation_original
+    for dim in dims:
+        assert scale_roundtrip[dim] == pytest.approx(scale_original[dim])
+        assert translation_roundtrip[dim] == pytest.approx(translation_original[dim])
+
+
+def test_coords_to_transforms_size_1_axis() -> None:
+    """A size-1 axis must not IndexError: scale defaults to 1.0, translation = coord[0]."""
+    data = np.arange(4).reshape(1, 4)
+    ds = xr.Dataset(
+        {"image": (["z", "x"], data)},
+        coords={
+            "z": np.array([7.0]),  # single sample -> no spacing to measure
+            "x": np.array([0.0, 0.5, 1.0, 1.5]),
+        },
+    )
+
+    scale, translation = coords_to_transforms(ds)
+
+    assert scale["z"] == 1.0
+    assert translation["z"] == 7.0
+    assert scale["x"] == 0.5
+    assert translation["x"] == 0.0
 
 
 def test_transforms_to_coords_2d() -> None:

@@ -1,4 +1,4 @@
-"""Basic tests for xarray-ome reading functionality."""
+"""Basic tests for xarray-ngff reading functionality."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from xarray_ome import open_ome_dataset, open_ome_datatree
+from xarray_ngff import open_ngff_dataset, open_ngff_datatree
 
 if TYPE_CHECKING:
     pass
@@ -17,13 +17,13 @@ if TYPE_CHECKING:
 
 def test_imports() -> None:
     """Test that imports work."""
-    assert open_ome_dataset is not None
-    assert open_ome_datatree is not None
+    assert open_ngff_dataset is not None
+    assert open_ngff_datatree is not None
 
 
-def test_open_ome_dataset(tmp_ome_zarr: Path) -> None:
+def test_open_ngff_dataset(tmp_ome_zarr: Path) -> None:
     """Test opening an OME-Zarr file as a Dataset."""
-    ds = open_ome_dataset(str(tmp_ome_zarr))
+    ds = open_ngff_dataset(str(tmp_ome_zarr))
 
     # Check it's a Dataset
     assert isinstance(ds, xr.Dataset)
@@ -42,42 +42,50 @@ def test_open_ome_dataset(tmp_ome_zarr: Path) -> None:
     # Check shape
     assert ds[data_var_name].shape == (2, 5, 10, 10)
 
-    # Check coordinates exist
-    assert "c" in ds.coords
+    # Spatial coords exist (lazy affine). This fixture has no omero block, so
+    # `c` falls back to integer positions (no label coordinate assigned).
     assert "z" in ds.coords
     assert "y" in ds.coords
     assert "x" in ds.coords
+    assert "c" not in ds.coords
 
-    # Check metadata is present
-    assert "ome_scale" in ds.attrs
-    assert "ome_translation" in ds.attrs
-    assert "ome_axes_units" in ds.attrs
-    assert "ome_ngff_resolution" in ds.attrs
-    assert "ome_ngff_metadata" in ds.attrs
+    # NEW contract: the verbatim `ome` block rides on ds.attrs["ome"] (carrier).
+    assert "ome" in ds.attrs
+    ome = ds.attrs["ome"]
+    assert "multiscales" in ome
+    # Physical coordinate values come from the lazy affine coords, not attrs.
+    # z: scale=0.5, translation=0.0
+    np.testing.assert_allclose(ds.coords["z"].values[:3], [0.0, 0.5, 1.0])
+    # y/x: scale=0.25
+    np.testing.assert_allclose(ds.coords["y"].values[:2], [0.0, 0.25])
+    # CF units attr carried on spatial coords.
+    assert ds["z"].attrs["units"] == "micrometer"
 
 
-def test_open_ome_datatree(tmp_ome_zarr: Path) -> None:
+def test_open_ngff_datatree(tmp_ome_zarr: Path) -> None:
     """Test opening an OME-Zarr file as a DataTree."""
-    dt = open_ome_datatree(str(tmp_ome_zarr))
+    dt = open_ngff_datatree(str(tmp_ome_zarr))
 
     # Check it's a DataTree
     assert isinstance(dt, xr.DataTree)
 
-    # Check children exist (should have 3 scales)
-    # Names are derived from OME-NGFF dataset paths
+    # NEW contract: level nodes are named by their integer level index.
     assert len(dt.children) == 3
-    assert "scale0_test_image" in dt.children
-    assert "scale1_test_image" in dt.children
-    assert "scale2_test_image" in dt.children
+    assert "0" in dt.children
+    assert "1" in dt.children
+    assert "2" in dt.children
 
-    # Check metadata is present in root
-    assert "ome_ngff_metadata" in dt.attrs
+    # Carrier: the verbatim `ome` block rides on the root node attrs.
+    assert "ome" in dt.attrs
+    assert "multiscales" in dt.attrs["ome"]
+    # Root is carrier-only: no data variable.
+    assert len(dt.ds.data_vars) == 0
 
     # Check each scale level
     for scale_name, expected_shape in [
-        ("scale0_test_image", (2, 5, 10, 10)),
-        ("scale1_test_image", (2, 3, 5, 5)),
-        ("scale2_test_image", (2, 2, 3, 3)),
+        ("0", (2, 5, 10, 10)),
+        ("1", (2, 3, 5, 5)),
+        ("2", (2, 2, 3, 3)),
     ]:
         child = dt[scale_name]
         ds = child.ds
@@ -91,10 +99,10 @@ def test_open_ome_datatree(tmp_ome_zarr: Path) -> None:
         assert actual_shape[1] <= expected_shape[1]  # z dimension (approx)
 
 
-def test_open_ome_dataset_specific_resolution(tmp_ome_zarr: Path) -> None:
+def test_open_ngff_dataset_specific_resolution(tmp_ome_zarr: Path) -> None:
     """Test opening a specific resolution level."""
     # Open resolution level 1
-    ds = open_ome_dataset(str(tmp_ome_zarr), resolution=1)
+    ds = open_ngff_dataset(str(tmp_ome_zarr), resolution=1)
 
     # Get data variable name
     data_var_name = list(ds.data_vars.keys())[0]
@@ -104,19 +112,23 @@ def test_open_ome_dataset_specific_resolution(tmp_ome_zarr: Path) -> None:
     assert ds[data_var_name].shape[2] < 10  # y dimension smaller
     assert ds[data_var_name].shape[3] < 10  # x dimension smaller
 
-    # Check metadata
-    assert ds.attrs["ome_ngff_resolution"] == 1
+    # NEW contract: resolution selects level 1; its physical coords are coarser
+    # than level 0 (downsampled => larger pixel spacing). Carrier present.
+    assert "ome" in ds.attrs
+    # Level 1 y spacing is larger than level 0's 0.25 (downsample factor 2).
+    y = ds.coords["y"].values
+    assert float(y[1] - y[0]) > 0.25
 
 
-def test_open_ome_dataset_invalid_resolution(tmp_ome_zarr: Path) -> None:
+def test_open_ngff_dataset_invalid_resolution(tmp_ome_zarr: Path) -> None:
     """Test opening an invalid resolution level raises error."""
     with pytest.raises(ValueError, match="Resolution level 10 not found"):
-        open_ome_dataset(str(tmp_ome_zarr), resolution=10)
+        open_ngff_dataset(str(tmp_ome_zarr), resolution=10)
 
 
 def test_physical_coordinates(tmp_ome_zarr: Path) -> None:
     """Test that physical coordinates are correctly applied."""
-    ds = open_ome_dataset(str(tmp_ome_zarr))
+    ds = open_ngff_dataset(str(tmp_ome_zarr))
 
     # Check z coordinates (scale=0.5, translation=0.0)
     z_coords = ds.coords["z"].values
@@ -141,7 +153,7 @@ def test_physical_coordinates(tmp_ome_zarr: Path) -> None:
 
 def test_lazy_loading(tmp_ome_zarr: Path) -> None:
     """Test that data is lazily loaded with Dask."""
-    ds = open_ome_dataset(str(tmp_ome_zarr))
+    ds = open_ngff_dataset(str(tmp_ome_zarr))
 
     # Get data variable name
     data_var_name = list(ds.data_vars.keys())[0]
@@ -158,7 +170,7 @@ def test_lazy_loading(tmp_ome_zarr: Path) -> None:
 
 def test_single_scale_file(tmp_ome_zarr_single_scale: Path) -> None:
     """Test opening a single-scale OME-Zarr file."""
-    ds = open_ome_dataset(str(tmp_ome_zarr_single_scale))
+    ds = open_ngff_dataset(str(tmp_ome_zarr_single_scale))
 
     # Get data variable name
     data_var_name = list(ds.data_vars.keys())[0]
@@ -168,7 +180,7 @@ def test_single_scale_file(tmp_ome_zarr_single_scale: Path) -> None:
     assert "y" in ds.dims
     assert "x" in ds.dims
 
-    # DataTree should have only one scale
-    dt = open_ome_datatree(str(tmp_ome_zarr_single_scale))
+    # DataTree should have only one scale, named by level index.
+    dt = open_ngff_datatree(str(tmp_ome_zarr_single_scale))
     assert len(dt.children) == 1
-    assert "scale0_simple_image" in dt.children
+    assert "0" in dt.children

@@ -106,36 +106,46 @@ def coords_to_transforms(
     - scale: spacing between coordinate values
     - translation: first coordinate value
 
-    If OME metadata is stored in attrs, uses that directly.
-
     References
     ----------
     https://github.com/JaneliaSciComp/xarray-ome-ngff/blob/main/src/xarray_ome_ngff/v04/multiscale.py#L219-L224
     """
-    # Try to use stored OME metadata if available
-    if "ome_scale" in dataset.attrs and "ome_translation" in dataset.attrs:
-        return dataset.attrs["ome_scale"], dataset.attrs["ome_translation"]
-
-    # Otherwise, compute from coordinates
     scale: dict[Hashable, float] = {}
     translation: dict[Hashable, float] = {}
 
-    # Get the first data variable to access dimensions
-    first_var = next(iter(dataset.data_vars))
-    data_array = dataset[first_var]
-
-    for dim in data_array.dims:
+    # Derive the axis set from every data variable's dims (their union), so a
+    # multi-variable / disjoint-dim Dataset does not silently drop an axis's
+    # transform. For a single-var Dataset this is just that var's dims.
+    for dim in dataset.dims:
         if dim in dataset.coords:
             coord = dataset.coords[dim].values
+            # Only numeric (physical/spatial-temporal) coordinates yield a
+            # scale/translation. Non-numeric coords -- notably the object/string
+            # channel-label `c` coord the reader adds from omero -- are skipped:
+            # subtracting/casting them to float would raise, and they carry no
+            # affine transform. ngff-zarr then applies its identity default.
+            if not np.issubdtype(coord.dtype, np.number):
+                continue
+            # Degenerate size-0 axis: no sample to read, skip (no transform).
+            if len(coord) == 0:
+                continue
             if len(coord) > 1:
                 # Calculate scale as spacing between coordinates
                 # Assumes uniform spacing
-                scale[dim] = float(coord[1] - coord[0])
+                dim_scale = float(coord[1] - coord[0])
             else:
-                scale[dim] = 1.0
+                # Size-1 axis: no spacing to measure, scale defaults to 1.0.
+                dim_scale = 1.0
 
             # Translation is the first coordinate value
-            translation[dim] = float(coord[0])
+            dim_translation = float(coord[0])
+
+            # Defensive: never write NaN/inf into a transform.
+            if not (np.isfinite(dim_scale) and np.isfinite(dim_translation)):
+                continue
+
+            scale[dim] = dim_scale
+            translation[dim] = dim_translation
         else:
             # No coordinate array, use defaults
             scale[dim] = 1.0

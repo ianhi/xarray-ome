@@ -1,1 +1,1 @@
-"""Tests for xarray-ome."""
+"""Tests for xarray-ngff."""
