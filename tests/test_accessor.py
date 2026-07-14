@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
+import xarray as xr
 from ngff_zarr import (  # type: ignore[import-untyped]
     to_multiscales,
     to_ngff_image,
@@ -137,8 +138,6 @@ def test_raw_returns_carrier(calibrated_store: str) -> None:
     assert isinstance(raw, dict)
     assert "multiscales" in raw
     # Defensive: an object with no carrier returns {} (never KeyError).
-    import xarray as xr
-
     assert xr.Dataset().ngff.raw == {}
 
 
@@ -150,6 +149,68 @@ def test_coord_role_lookup(calibrated_store: str) -> None:
     assert wc is not None
     np.testing.assert_allclose(wc.values[0], -5.0)
     assert ds.ngff.pixel_coord("x") is None
+
+
+# ---- coordinate-reconstructed axes (carrier absent) ----------------------
+def test_axes_reconstructed_from_coords_without_carrier() -> None:
+    """A Dataset with physical coords + attrs but NO ``ome`` carrier still
+    reports axes / units / calibrated, reconstructed from the coordinates."""
+    ds = xr.Dataset({"image": (("y", "x"), np.zeros((4, 8), dtype=np.float32))})
+    ds = ds.assign_coords(
+        y=("y", np.arange(4) * 0.5 + 2.0),
+        x=("x", np.arange(8) * 0.25),
+    )
+    ds["y"].attrs.update(units="micrometer", axis_type="space")
+    ds["x"].attrs.update(units="micrometer", axis_type="space")
+    assert "ome" not in ds.attrs
+
+    axes = ds.ngff.axes
+    assert [a.name for a in axes] == ["y", "x"]
+    assert [a.type for a in axes] == ["space", "space"]
+    assert ds.ngff.units == {"y": "micrometer", "x": "micrometer"}
+    assert ds.ngff.calibrated == {"y": True, "x": True}
+    # version / name / channels are honestly absent without a carrier.
+    assert ds.ngff.version is None
+    assert ds.ngff.channels is None
+    # scale / translation reconstructed from the dense coords (first two values).
+    assert ds.ngff.scale == pytest.approx({"y": 0.5, "x": 0.25})
+    assert ds.ngff.translation == pytest.approx({"y": 2.0, "x": 0.0})
+
+
+def test_axis_type_inferred_from_name_without_attrs() -> None:
+    """When a coord carries no ``axis_type`` attr, the type is inferred from the
+    dimension name (x/y/z -> space, t -> time, c -> channel)."""
+    ds = xr.Dataset({"image": (("t", "z", "y", "x"), np.zeros((1, 1, 2, 2)))})
+    types = {a.name: a.type for a in ds.ngff.axes}
+    assert types == {"t": "time", "z": "space", "y": "space", "x": "space"}
+
+
+def test_dataarray_accessor_reads_from_coords(calibrated_store: str) -> None:
+    """``ds["image"].ngff`` (a DataArray, whose attrs drop the carrier) still
+    reconstructs axes / units / calibrated / transforms from its coordinates."""
+    ds = open_ngff_dataset(calibrated_store)
+    var = next(iter(ds.data_vars))
+    da = ds[var]
+    # DataArray attrs do NOT carry the parent's ``ome`` block.
+    assert "ome" not in da.attrs
+    assert da.ngff.version is None and da.ngff.channels is None
+    assert [a.name for a in da.ngff.axes] == ["c", "y", "x"]
+    assert da.ngff.units["y"] == "micrometer"
+    assert da.ngff.calibrated["y"] is True
+    # transform-index-backed coords report exact scale/translation.
+    assert da.ngff.scale["x"] == pytest.approx(0.5)
+    assert da.ngff.translation["x"] == pytest.approx(-5.0)
+    # repr renders (axes present, no carrier).
+    assert "DataArray.ngff" in repr(da.ngff)
+    assert "transform" in da.ngff._repr_html_()
+
+
+def test_scale_translation_from_transform_index(calibrated_store: str) -> None:
+    ds = open_ngff_dataset(calibrated_store)
+    assert ds.ngff.scale == pytest.approx({"y": 0.5, "x": 0.5})
+    assert ds.ngff.translation == pytest.approx({"y": 10.0, "x": -5.0})
+    # channel ``c`` has no real coordinate -> excluded from the transforms.
+    assert "c" not in ds.ngff.scale
 
 
 # ---- DataTree ------------------------------------------------------------

@@ -1,0 +1,12 @@
+[project]
+name = "ngff-xarray-research"
+version = "0.1.0"
+description = "Research notebooks for NGFF 0.5 → xarray mapping"
+requires-python = ">=3.11"
+dependencies = [
+    "jupyter-book>=2",
+    "xarray>=2025.1.0",
+    "numpy",
+    "zarr>=3",
+    "ipykernel",
+]

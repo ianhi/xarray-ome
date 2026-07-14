@@ -1,0 +1,50 @@
+version: 1
+project:
+  title: 'xarray-ngff RFC: An xarray representation for OME-Zarr (NGFF 0.5)'
+  authors:
+    - name: Ian Hunt-Isaak
+  copyright: '2026'
+  bibliography: []
+  exports:
+    - format: pdf
+      template: plain_latex_book
+      output: exports/xarray-ngff-rfc.pdf
+  toc:
+    - file: intro.md
+    - file: summary.md
+    - title: The Mapping (detailed decisions)
+      children:
+        - file: mapping/axes-to-dims.md
+        - file: mapping/transforms-to-coords.md
+        - file: mapping/multiscales-to-datatree.md
+        - file: mapping/omero-to-coords.md
+        - file: mapping/round-trip.md
+        - file: mapping/custom-index-design.md
+    - title: 'Appendix: NGFF 0.5 Spec'
+      children:
+        - file: spec/ngff-0.5-spec.md
+        - file: spec/zarr-v3.md
+        - file: spec/axes.ipynb
+        - file: spec/axes-experiments.ipynb
+        - file: spec/coordinate-transformations.md
+        - file: spec/multiscales.md
+        - file: spec/omero.md
+    - title: 'Appendix: xarray Data Model'
+      children:
+        - file: xarray/data-model.md
+        - file: xarray/datatree.md
+        - file: xarray/encoding.md
+    - title: 'Appendix: Custom Indexes'
+      children:
+        - file: indexes/index-overview.md
+        - file: indexes/range-index.md
+        - file: indexes/coordinate-transform-index.md
+        - file: indexes/linked-indexes.md
+    - title: 'Appendix: Prior Art'
+      children:
+        - file: prior-art.md
+        - file: prior-art-survey.md
+site:
+  options:
+    folders: true
+  template: book-theme
