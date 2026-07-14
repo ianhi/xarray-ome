@@ -73,7 +73,11 @@ def _build_level_dataset(
 ) -> xr.Dataset:
     """Build a single-level Dataset with lazy coords + CF attrs from an NgffImage."""
     dims = tuple(image.dims)
-    var_name = image.name or "image"
+    # NGFF names the finest image after its group path, which for a root-level
+    # multiscale is "/" (see idr0066). A "/" is illegal as a DataTree variable name
+    # (path-ambiguous) and meaningless as a data-var name, so treat any name that is
+    # empty or contains "/" as absent and use the neutral "image" fallback.
+    var_name = image.name if image.name and "/" not in image.name else "image"
     ds = xr.Dataset({var_name: (dims, image.data)})
 
     # omero channel labels on the `c` coordinate (graceful fallback to integers).
@@ -157,10 +161,16 @@ def open_ngff_datatree(path: str | Path, validate: bool = False) -> xr.DataTree:
 
     nodes: dict[str, xr.Dataset] = {}
     for level, image in enumerate(multiscales.images):
-        nodes[f"/{level}"] = _build_level_dataset(image, channel_labels, axis_type)
+        ds = _build_level_dataset(image, channel_labels, axis_type)
+        # Carry the verbatim `ome` block on EVERY level node, not just the root:
+        # DataTree inherits coordinates from ancestors but NOT attrs, so a level
+        # pulled out on its own (``dt["0"].to_dataset()``) would otherwise lose the
+        # carrier and its ``.ngff`` accessor would read empty.
+        if ome is not None:
+            ds.attrs["ome"] = ome
+        nodes[f"/{level}"] = ds
 
-    # Carrier: the verbatim `ome` block on the root -> nothing the parser dropped
-    # is lost on round-trip.
+    # Carrier also on the root -> nothing the parser dropped is lost on round-trip.
     nodes["/"] = xr.Dataset(attrs={"ome": ome} if ome is not None else {})
     return xr.DataTree.from_dict(nodes)
 

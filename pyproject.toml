@@ -22,6 +22,28 @@ dependencies = [
     "scipy>=1.17.1",
 ]
 
+[project.optional-dependencies]
+# The bioio adapter (`xarray_ngff.adapters.bioio`) is opt-in: the core must never
+# pull bioio. Install with `pip install xarray-ngff[bioio]` to use `from_bioio`.
+bioio = [
+    "bioio>=1.0",
+    "bioio-ome-zarr>=1.0",
+]
+# Everything the "greatest hits" talk notebook needs on top of the core deps
+# (experiments/talk_greatest_hits.ipynb): bioio format readers, tifffile to
+# generate the demo OME-TIFF, and pooch for scipy.datasets.ascent (the mosaic).
+# Install with `pip install xarray-ngff[talk]`.
+talk = [
+    "bioio>=1.0",
+    "bioio-ome-zarr>=1.0",
+    "bioio-ome-tiff>=1.0",
+    "tifffile>=2023.1.1",
+    "pooch>=1.8",
+    # Only for the §2 "why not pint by default" design-note cell (shows quantify()
+    # replacing the lazy index + breaking plain .sel). Not used by the library.
+    "pint-xarray>=0.4",
+]
+
 [project.entry-points."xarray.backends"]
 ome-zarr = "xarray_ngff.backend:OmeZarrBackendEntrypoint"
 ngff = "xarray_ngff.backend:OmeZarrBackendEntrypoint"
@@ -86,6 +108,14 @@ dev = [
   "jupyter-cache>=1.0.1",
   "jupyterlab>=4.4.9",
   "jupyterlab-vim>=4.1.4",
+  # Deps for the talk notebook (experiments/talk_greatest_hits.ipynb); mirrors the
+  # `talk` optional-dependencies extra so `uv sync` sets it up for local work.
+  "bioio>=1.0",
+  "bioio-ome-zarr>=1.0",
+  "bioio-ome-tiff>=1.0",
+  "tifffile>=2023.1.1",
+  "pooch>=1.8",
+  "pint-xarray>=0.4",
   "mypy>=1.18.2",
   "myst-nb>=1.3.0",
   "pre-commit>=4.3.0",
