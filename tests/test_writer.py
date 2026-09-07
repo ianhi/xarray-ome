@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import numpy as np
 import xarray as xr
@@ -14,9 +13,6 @@ from xarray_ome import (
     write_ome_dataset,
     write_ome_datatree,
 )
-
-if TYPE_CHECKING:
-    pass
 
 
 def test_write_ome_dataset(tmp_ome_zarr: Path, tmp_path: Path) -> None:

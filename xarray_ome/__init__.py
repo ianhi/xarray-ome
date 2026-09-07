@@ -10,8 +10,8 @@ from .writer import write_ome_dataset, write_ome_datatree
 
 __all__ = [
     "__version__",
-    "open_ome_datatree",
     "open_ome_dataset",
-    "write_ome_datatree",
+    "open_ome_datatree",
     "write_ome_dataset",
+    "write_ome_datatree",
 ]
