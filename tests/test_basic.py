@@ -3,16 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
 import xarray as xr
 
 from xarray_ome import open_ome_dataset, open_ome_datatree
-
-if TYPE_CHECKING:
-    pass
 
 
 def test_imports() -> None:
