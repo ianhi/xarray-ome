@@ -90,9 +90,9 @@ ds = open_ome_dataset("path/to/image.ome.zarr")
 ds_low = open_ome_dataset("path/to/image.ome.zarr", resolution=2)
 
 # Access data and coordinates
-print(ds.dims)        # Dimensions: (c, z, y, x)
-print(ds.coords)      # Physical coordinates in micrometers
-print(ds.data_vars)   # Data variables
+print(ds.dims)  # Dimensions: (c, z, y, x)
+print(ds.coords)  # Physical coordinates in micrometers
+print(ds.data_vars)  # Data variables
 ```
 
 ## Features
@@ -145,9 +145,9 @@ print(ds.coords["y"])  # [0.0, 0.36, 0.72, ..., 98.75] micrometers
 print(ds.coords["z"])  # [0.0, 0.50, 1.00, ..., 117.5] micrometers
 
 # Access metadata
-print(ds.attrs["ome_scale"])        # Scale factors per dimension
+print(ds.attrs["ome_scale"])  # Scale factors per dimension
 print(ds.attrs["ome_translation"])  # Translation offsets
-print(ds.attrs["ome_axes_units"])   # Physical units
+print(ds.attrs["ome_axes_units"])  # Physical units
 ```
 
 ## Metadata Handling
@@ -159,9 +159,9 @@ dt = open_ome_datatree("image.ome.zarr")
 
 # Access full OME-NGFF metadata
 metadata = dt.attrs["ome_ngff_metadata"]
-print(metadata["axes"])      # Axis definitions
+print(metadata["axes"])  # Axis definitions
 print(metadata["datasets"])  # Dataset paths and transforms
-print(metadata["version"])   # OME-NGFF version
+print(metadata["version"])  # OME-NGFF version
 ```
 
 ## Working with DataTree
@@ -227,10 +227,7 @@ ds = open_ome_dataset("image.ome.zarr")
 
 # Chain operations without loading data
 result = (
-    ds["image"]
-    .sel(c=0)
-    .mean(dim="z")
-    .compute()  # Only compute at the end
+    ds["image"].sel(c=0).mean(dim="z").compute()  # Only compute at the end
 )
 
 # Configure Dask for parallel processing
@@ -322,10 +319,10 @@ ds = open_ome_dataset(url)
 # Only downloads the chunks needed for this computation
 result = (
     ds["image"]
-    .sel(c=0)           # Select first channel
+    .sel(c=0)  # Select first channel
     .isel(z=slice(0, 10))  # Select first 10 z-slices
-    .mean(dim="z")       # Average across z
-    .compute()           # Execute computation
+    .mean(dim="z")  # Average across z
+    .compute()  # Execute computation
 )
 
 # Only the required chunks were downloaded (~few MB instead of full dataset)

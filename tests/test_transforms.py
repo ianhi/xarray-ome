@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Hashable
+from collections.abc import Hashable
 
 import numpy as np
 import xarray as xr
