@@ -9,7 +9,7 @@ from xarray_ome import open_ome_dataset, open_ome_datatree
 
 def test_backend_registered() -> None:
     """Test that ome-zarr backend is registered with xarray."""
-    import xarray.backends.plugins as plugins
+    from xarray.backends import plugins
 
     backend = plugins.get_backend("ome-zarr")
     assert backend is not None
