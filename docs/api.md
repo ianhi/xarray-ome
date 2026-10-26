@@ -118,9 +118,9 @@ ds_low = open_ome_dataset("image.ome.zarr", resolution=2)
 ds_single = open_ome_dataset("single_scale.ome.zarr")  # Uses resolution=0
 
 # Access data and coordinates
-print(ds.dims)           # Dimensions: {c: 2, z: 236, y: 275, x: 271}
-print(ds.coords["x"])    # Physical x coordinates in micrometers
-print(ds["image"].shape) # Data array shape
+print(ds.dims)  # Dimensions: {c: 2, z: 236, y: 275, x: 271}
+print(ds.coords["x"])  # Physical x coordinates in micrometers
+print(ds["image"].shape)  # Data array shape
 ```
 
 ---
@@ -307,14 +307,14 @@ When OME metadata includes channel labels (via `omero.channels[].label`), they a
 ds = open_ome_dataset("image.ome.zarr")
 
 # Channel coordinates use string labels from metadata
-print(ds.coords['c'].values)  # array(['LaminB1', 'Dapi'], dtype='<U7')
-print(ds.coords['c'].dtype)   # dtype('<U7') - Unicode string
+print(ds.coords["c"].values)  # array(['LaminB1', 'Dapi'], dtype='<U7')
+print(ds.coords["c"].dtype)  # dtype('<U7') - Unicode string
 
 # Instead of numeric indices:
 # array([0, 1])
 
 # Access data by channel name
-lamin_data = ds.sel(c='LaminB1')
+lamin_data = ds.sel(c="LaminB1")
 ```
 
 **Note:**
