@@ -31,6 +31,7 @@ Open OME-Zarr files with a single function call
 
 ```python
 from xarray_ome import open_ome_datatree
+
 dt = open_ome_datatree("image.ome.zarr")
 ```
 
